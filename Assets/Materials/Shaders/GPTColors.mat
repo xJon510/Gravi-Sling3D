@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-1414103599944082862
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 10
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: GPTColors
+  m_Shader: {fileID: -6465566751694194690, guid: ce4cd2edc1a40754490d9c510792d8ab, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 2
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _QueueControl: 0
+    - _QueueOffset: 0
+    m_Colors:
+    - _Color168_CockpitAccent: {r: 0.4465309, g: 2.9960785, b: 2.8808446, a: 0}
+    - _Color169_AccentLights: {r: 0, g: 85.445015, b: 19.683666, a: 0}
+    - _Color170_Thrusters: {r: 3.4716985, g: 24.990192, b: 31.999998, a: 0}
+    - _Color176_MainBody_WingTips: {r: 0.18635, g: 1.0140661, b: 1.4631926, a: 0}
+    - _Color177_SecondaryBody: {r: 0.32549024, g: 1, b: 0.9441312, a: 0}
+    - _Color178_AccentWiring: {r: 0.47120413, g: 2, b: 1.4415684, a: 0}
+    - _Color179_ThrusterEdge_Accents: {r: 0.43867922, g: 0.84017944, b: 1, a: 0}
+    - _Color80_Wings: {r: 0.15356888, g: 0.25237682, b: 0.2735849, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
