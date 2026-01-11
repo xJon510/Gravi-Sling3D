@@ -107,7 +107,10 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
             list.Add(i);
         }
     }
-
+    public void Rebuild()
+    {
+        BuildIndex();
+    }
     private void FixedUpdate()
     {
         if (fieldData == null || fieldData.count <= 0) return;

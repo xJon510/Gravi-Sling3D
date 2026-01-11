@@ -27,8 +27,8 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
             lod2Mesh != null;
     }
 
-    [Header("Input Data")]
-    public AsteroidFieldData fieldData;
+    [Header("Input Data (Runtime Chunks)")]
+    public List<AsteroidFieldData> fieldDatas = new List<AsteroidFieldData>();
 
     [Tooltip("If null, uses Camera.main.")]
     public Camera renderCamera;
@@ -71,7 +71,7 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
 
     private void OnEnable()
     {
-        InitIfNeeded(force: true);
+        //InitIfNeeded(force: true);
     }
 
     private void OnDisable()
@@ -87,23 +87,27 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
         if (onlyRenderInPlayMode && !Application.isPlaying)
             return;
 
-        if (fieldData == null || fieldData.count <= 0)
+        if (fieldDatas == null || fieldDatas.Count == 0)
             return;
-
-        InitIfNeeded(force: false);
 
         var cam = renderCamera ? renderCamera : Camera.main;
         if (!cam)
             return;
 
-        // Optional drift (play mode only — edit mode time is weird and annoying)
-        if (applyRotationDriftInPlayMode && Application.isPlaying)
-            ApplyRotationDrift(Time.deltaTime);
+        foreach (var data in fieldDatas)
+        {
+            if (data == null || data.count <= 0)
+                continue;
 
-        Render(cam);
+            InitIfNeeded(data, force: false);
+
+            if (applyRotationDriftInPlayMode && Application.isPlaying)
+                ApplyRotationDrift(data, Time.deltaTime);
+
+            Render(data, cam);
+        }
     }
-
-    private void InitIfNeeded(bool force)
+    private void InitIfNeeded(AsteroidFieldData fieldData, bool force)
     {
         if (!force && _initialized)
             return;
@@ -153,7 +157,7 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
         _initialized = true;
     }
 
-    private void ApplyRotationDrift(float dt)
+    private void ApplyRotationDrift(AsteroidFieldData fieldData, float dt)
     {
         // Rebuild matrices if rotation drift changes rotations
         // NOTE: This is O(N) and fine for hundreds/thousands. For 50k+, we'd move this to a cheaper path.
@@ -183,7 +187,7 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
         }
     }
 
-    private void Render(Camera cam)
+    private void Render(AsteroidFieldData fieldData, Camera cam)
     {
         // Clear buckets without reallocating
         int typeCount = _buckets.GetLength(0);
