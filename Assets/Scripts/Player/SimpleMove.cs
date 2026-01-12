@@ -14,6 +14,12 @@ public class SimpleMove : MonoBehaviour
     public float damping = 2f;                 // lower = more drift
     public bool normalizeInput = true;
 
+    [Header("Boost (Hold LeftShift)")]
+    public float boostMaxMultiplier = 2.0f;   // 2.0 = up to 2x maxSpeed
+    public float boostRampUp = 1.2f;          // how fast boost charges (per second)
+    public float boostRampDown = 2.0f;        // how fast it decays when released
+    public float boostAccelMultiplier = 1.35f; // optional: stronger accel while boosting
+
     [Header("Rotation")]
     public bool enableRotation = true;
     public float rotationSpeed = 12f;          // higher = snappier
@@ -41,6 +47,7 @@ public class SimpleMove : MonoBehaviour
 
     private float _bank;
     private float _wobbleT;
+    private float boostCharge = 0f;
 
     private void Awake()
     {
@@ -80,15 +87,19 @@ public class SimpleMove : MonoBehaviour
         if (Input.GetKey(KeyCode.Q)) roll += 1f;
         if (Input.GetKey(KeyCode.E)) roll -= 1f;
 
+        bool boosting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+        float up = boosting ? boostRampUp : -boostRampDown;
+        boostCharge = Mathf.Clamp01(boostCharge + up * Time.fixedDeltaTime);
+
         // accumulate roll over time (so it "sticks" like space roll)
         _manualRoll += roll * manualRollSpeed * Time.fixedDeltaTime;
 
         // --- BUILD CAMERA-RELATIVE MOVE DIR ---
-        Vector3 desiredVel = Vector3.zero;
+        Vector3 moveDir = Vector3.zero;
 
         if (cameraTransform)
         {
-            // Use camera axes; keep them orthonormal and stable
             Vector3 camF = cameraTransform.forward;
             Vector3 camR = cameraTransform.right;
             Vector3 camU = cameraTransform.up;
@@ -101,21 +112,28 @@ public class SimpleMove : MonoBehaviour
                 camF * input.z;
 
             if (dir.sqrMagnitude > 0.0001f)
-                dir.Normalize();
-
-            desiredVel = dir * maxSpeed;
+                moveDir = dir.normalized;
         }
         else
         {
-            // Fallback: world-relative
             Vector3 dir = new Vector3(input.x, input.y, input.z);
-            if (dir.sqrMagnitude > 0.0001f) dir.Normalize();
-            desiredVel = dir * maxSpeed;
+            if (dir.sqrMagnitude > 0.0001f)
+                moveDir = dir.normalized;
         }
+
+        // --- BOOSTED SPEED/ACCEL ---
+        float boostMultiplier = Mathf.Lerp(1f, boostMaxMultiplier, boostCharge);
+        float boostedMaxSpeed = maxSpeed * boostMultiplier;
+
+        // optional extra snap while boosting
+        float boostedAccel = acceleration * Mathf.Lerp(1f, boostAccelMultiplier, boostCharge);
+
+        // --- DESIRED VELOCITY (camera-relative preserved) ---
+        Vector3 desiredVel = moveDir * boostedMaxSpeed;
 
         // --- MOVE (INERTIA) ---
         Vector3 currentVel = rb.linearVelocity;
-        Vector3 newVel = Vector3.MoveTowards(currentVel, desiredVel, acceleration * Time.fixedDeltaTime);
+        Vector3 newVel = Vector3.MoveTowards(currentVel, desiredVel, boostedAccel * Time.fixedDeltaTime);
 
         // Drift damping when no input
         if (input.sqrMagnitude < 0.0001f)
