@@ -1,5 +1,6 @@
+using System;
+using TMPro;
 using UnityEngine;
-
 public class SimpleMove : MonoBehaviour
 {
     [Header("References")]
@@ -45,6 +46,38 @@ public class SimpleMove : MonoBehaviour
     [Tooltip("Wobble speed (Hz-ish).")]
     public float thrustWobbleSpeed = 6f;
 
+    [Header("Slingshot Slip (Coast Assist)")]
+    public bool enableSlip = true;
+
+    [Tooltip("Seconds it takes to return to normal handling with no input.")]
+    public float slipReturnTimeNoInput = 2.5f;
+
+    [Tooltip("Seconds it takes to return to normal handling while player is giving input.")]
+    public float slipReturnTimeWithInput = 0.6f;
+
+    [Tooltip("Multiply damping by this at full slip (0 = no damping, 1 = normal damping).")]
+    [Range(0f, 1f)] public float slipDampingMultiplier = 0.08f;
+
+    [Tooltip("Also reduce steering accel slightly while slipping (optional). 1 = unchanged.")]
+    [Range(0.2f, 1f)] public float slipAccelMultiplier = 1.0f;
+
+    [Tooltip("Slip starts at this value when script is enabled.")]
+    [Range(0f, 1f)] public float slipStart = 1f;
+
+    [NonSerialized] public float slipFactor = 0f; // 1 = fully slipping, 0 = normal
+
+    [Header("Debug")]
+    public bool debugVelocity = false;
+
+    [Tooltip("TMP text to show current Rigidbody velocity.")]
+    public TMP_Text velocityText;
+
+    [Tooltip("If true, shows magnitude only. If false, shows full vector.")]
+    public bool showMagnitudeOnly = true;
+
+    [Tooltip("Decimal precision for velocity display.")]
+    [Range(0, 4)] public int velocityDecimals = 2;
+
     private float _bank;
     private float _wobbleT;
     private float boostCharge = 0f;
@@ -64,6 +97,11 @@ public class SimpleMove : MonoBehaviour
         if (!cameraTransform && Camera.main)
             cameraTransform = Camera.main.transform;
     }
+    private void OnEnable()
+    {
+        if (enableSlip)
+            slipFactor = slipStart;
+    }
 
     private void FixedUpdate()
     {
@@ -82,6 +120,14 @@ public class SimpleMove : MonoBehaviour
 
         if (normalizeInput && input.sqrMagnitude > 1f)
             input.Normalize();
+
+        // --- SLIP DECAY ---
+        if (enableSlip && slipFactor > 0f)
+        {
+            float returnTime = (input.sqrMagnitude > 0.0001f) ? slipReturnTimeWithInput : slipReturnTimeNoInput;
+            float rate = (returnTime <= 0.0001f) ? 999f : (1f / returnTime);
+            slipFactor = Mathf.MoveTowards(slipFactor, 0f, rate * Time.fixedDeltaTime);
+        }
 
         float roll = 0f;
         if (Input.GetKey(KeyCode.Q)) roll += 1f;
@@ -128,18 +174,41 @@ public class SimpleMove : MonoBehaviour
         // optional extra snap while boosting
         float boostedAccel = acceleration * Mathf.Lerp(1f, boostAccelMultiplier, boostCharge);
 
+        bool hasInput = input.sqrMagnitude > 0.0001f;
+
+        // Slip influence: 1 at full slip, 0 at normal
+        float slip01 = (enableSlip ? slipFactor : 0f);
+
+        // Steering authority while slipping
+        float slipAccelScale = Mathf.Lerp(1f, slipAccelMultiplier, slip01);
+        float accelForSteering = boostedAccel * slipAccelScale;
+
+        // Damping while slipping (when no input)
+        float slipDampScale = Mathf.Lerp(1f, slipDampingMultiplier, slip01); // < 1 = less damping
+
         // --- DESIRED VELOCITY (camera-relative preserved) ---
         Vector3 desiredVel = moveDir * boostedMaxSpeed;
 
         // --- MOVE (INERTIA) ---
         Vector3 currentVel = rb.linearVelocity;
-        Vector3 newVel = Vector3.MoveTowards(currentVel, desiredVel, boostedAccel * Time.fixedDeltaTime);
+        Vector3 newVel = currentVel;
 
-        // Drift damping when no input
-        if (input.sqrMagnitude < 0.0001f)
+        if (hasInput && moveDir.sqrMagnitude > 0.0001f)
         {
-            float dampFactor = Mathf.Exp(-damping * Time.fixedDeltaTime);
-            newVel *= dampFactor;
+            // Steer toward desired velocity, but slip can reduce steering authority.
+            newVel = Vector3.MoveTowards(currentVel, desiredVel, accelForSteering * Time.fixedDeltaTime);
+        }
+        else
+        {
+            // No input: coast. Only apply drag/damping (slip reduces it further).
+            newVel = currentVel;
+
+            if (damping > 0f)
+            {
+                float effectiveDamping = damping * slipDampScale;
+                float dampFactor = Mathf.Exp(-effectiveDamping * Time.fixedDeltaTime);
+                newVel *= dampFactor;
+            }
         }
 
         rb.linearVelocity = newVel;
@@ -179,6 +248,31 @@ public class SimpleMove : MonoBehaviour
                 rb.MoveRotation(Quaternion.Slerp(rb.rotation, styled, t));
             }
         }
+    }
+    private void LateUpdate()
+    {
+        if (!debugVelocity || velocityText == null || rb == null)
+            return;
+
+        Vector3 vel = rb.linearVelocity;
+
+        if (showMagnitudeOnly)
+        {
+            velocityText.text =
+                $"Velocity: {vel.magnitude.ToString($"F{velocityDecimals}")}";
+        }
+        else
+        {
+            velocityText.text =
+                $"Velocity:\n" +
+                $"X {vel.x.ToString($"F{velocityDecimals}")}\n" +
+                $"Y {vel.y.ToString($"F{velocityDecimals}")}\n" +
+                $"Z {vel.z.ToString($"F{velocityDecimals}")}\n" +
+                $"|V| {vel.magnitude.ToString($"F{velocityDecimals}")}";
+        }
+
+        float t = Mathf.InverseLerp(0f, maxSpeed * boostMaxMultiplier, vel.magnitude);
+        velocityText.color = Color.Lerp(Color.cyan, Color.red, t);
     }
 
     private Quaternion ComputeFacing3D(Vector3 dir)

@@ -39,6 +39,22 @@ public static class AsteroidFieldRuntimeGenerator
         [Header("Spatial Index Bake (Grid)")]
         public bool bakeSpatialIndex = true;
         [Min(0.0001f)] public float gridCellSize = 20f;
+
+        [Header("Placement (Grid-accelerated)")]
+        public bool useGridPlacement = true;
+
+        // If <= 0, defaults to gridCellSize.
+        [Min(0.0f)] public float placementCellSize = 0f;
+
+        // How many random candidate points we try inside a chosen cell each time.
+        [Min(1)] public int candidatesPerCell = 6;
+
+        // Max asteroids allowed in a single cell (prevents “cell clumps” + grid artifacts).
+        [Min(1)] public int maxPerCell = 2;
+
+        // How many random cell-picks we attempt to hit 'count' before giving up.
+        // (Higher = more likely to fill dense fields; lower = faster)
+        [Min(1)] public int maxCellPicks = 5000;
     }
 
     private struct PlacedSphere
@@ -83,9 +99,6 @@ public static class AsteroidFieldRuntimeGenerator
 
         var rng = new System.Random(seed);
 
-        // Overlap cache
-        var placed = new List<PlacedSphere>(Mathf.Max(128, settings.count));
-
         // Preallocate instance buffers
         var positions = new Vector3[settings.count];
         var rotations = new Quaternion[settings.count];
@@ -95,28 +108,47 @@ public static class AsteroidFieldRuntimeGenerator
         var baseRadii = new float[settings.count];
 
         int placedCount = 0;
-        int attemptsCap = Mathf.Max(1, settings.maxAttemptsPerAsteroid);
 
-        for (int i = 0; i < settings.count; i++)
+        float cellSize = settings.placementCellSize > 0f
+            ? settings.placementCellSize
+            : Mathf.Max(0.0001f, settings.gridCellSize);
+
+        float maxPossibleRadius = ComputeMaxPossibleRadius(settings);
+        Vector3 gridOrigin = fieldCenter - fieldSize * 0.5f; // == chunkOrigin
+
+        var placed = new List<PlacedSphere>(Mathf.Max(128, settings.count));
+        var hash = new PlacementHash(Mathf.Max(32, settings.count / 2));
+
+        if (settings.useGridPlacement)
         {
-            if (!TryPlaceOne(rng, settings, fieldCenter, fieldSize, placed, attemptsCap,
-                    out Vector3 pos,
-                    out Quaternion rot,
-                    out float scale,
-                    out int typeId,
-                    out Vector3 angVelDeg,
-                    out float baseRadius))
-            {
-                continue;
-            }
+            placedCount = PlaceUsingGridJitter(
+                rng, settings,
+                gridOrigin, fieldCenter, fieldSize,
+                cellSize, maxPossibleRadius,
+                positions, rotations, scales, typeIds, angularVel, baseRadii,
+                placed, hash
+            );
+        }
+        else
+        {
+            // fallback to your original approach (keeps functionality / regression safety)
+            int attemptsCap = Mathf.Max(1, settings.maxAttemptsPerAsteroid);
 
-            positions[placedCount] = pos;
-            rotations[placedCount] = rot;
-            scales[placedCount] = scale;
-            typeIds[placedCount] = typeId;
-            angularVel[placedCount] = angVelDeg;
-            baseRadii[placedCount] = baseRadius;
-            placedCount++;
+            for (int i = 0; i < settings.count; i++)
+            {
+                if (!TryPlaceOne(rng, settings, fieldCenter, fieldSize, placed, attemptsCap,
+                        out Vector3 pos, out Quaternion rot, out float scale,
+                        out int typeId, out Vector3 angVelDeg, out float baseRadius))
+                    continue;
+
+                positions[placedCount] = pos;
+                rotations[placedCount] = rot;
+                scales[placedCount] = scale;
+                typeIds[placedCount] = typeId;
+                angularVel[placedCount] = angVelDeg;
+                baseRadii[placedCount] = baseRadius;
+                placedCount++;
+            }
         }
 
         // Shrink arrays to actual placed count
@@ -131,8 +163,6 @@ public static class AsteroidFieldRuntimeGenerator
         }
 
         // Spatial index bake (matches your asset fields: cellKeys/cellStarts/cellIndices) :contentReference[oaicite:3]{index=3}
-        Vector3 gridOrigin = fieldCenter - fieldSize * 0.5f; // == chunkOrigin
-
         long[] cellKeys = Array.Empty<long>();
         int[] cellStarts = Array.Empty<int>();
         int[] cellIndices = Array.Empty<int>();
@@ -389,8 +419,6 @@ public static class AsteroidFieldRuntimeGenerator
 
         var rng = new System.Random(seed);
 
-        var placed = new List<PlacedSphere>(Mathf.Max(128, settings.count));
-
         var positions = new Vector3[settings.count];
         var rotations = new Quaternion[settings.count];
         var scales = new float[settings.count];
@@ -399,27 +427,46 @@ public static class AsteroidFieldRuntimeGenerator
         var baseRadii = new float[settings.count];
 
         int placedCount = 0;
-        int attemptsCap = Mathf.Max(1, settings.maxAttemptsPerAsteroid);
 
-        for (int i = 0; i < settings.count; i++)
+        float cellSize = settings.placementCellSize > 0f
+            ? settings.placementCellSize
+            : Mathf.Max(0.0001f, settings.gridCellSize);
+
+        float maxPossibleRadius = ComputeMaxPossibleRadius(settings);
+        Vector3 gridOrigin = fieldCenter - fieldSize * 0.5f;
+
+        var placed = new List<PlacedSphere>(Mathf.Max(128, settings.count));
+        var hash = new PlacementHash(Mathf.Max(32, settings.count / 2));
+
+        if (settings.useGridPlacement)
         {
-            if (!TryPlaceOne(
-                    rng, settings, fieldCenter, fieldSize, placed, attemptsCap,
-                    out Vector3 pos,
-                    out Quaternion rot,
-                    out float scale,
-                    out int typeId,
-                    out Vector3 angVelDeg,
-                    out float baseRadius))
-                continue;
+            placedCount = PlaceUsingGridJitter(
+                rng, settings,
+                gridOrigin, fieldCenter, fieldSize,
+                cellSize, maxPossibleRadius,
+                positions, rotations, scales, typeIds, angularVel, baseRadii,
+                placed, hash
+            );
+        }
+        else
+        {
+            int attemptsCap = Mathf.Max(1, settings.maxAttemptsPerAsteroid);
 
-            positions[placedCount] = pos;
-            rotations[placedCount] = rot;
-            scales[placedCount] = scale;
-            typeIds[placedCount] = typeId;
-            angularVel[placedCount] = angVelDeg;
-            baseRadii[placedCount] = baseRadius;
-            placedCount++;
+            for (int i = 0; i < settings.count; i++)
+            {
+                if (!TryPlaceOne(rng, settings, fieldCenter, fieldSize, placed, attemptsCap,
+                        out Vector3 pos, out Quaternion rot, out float scale,
+                        out int typeId, out Vector3 angVelDeg, out float baseRadius))
+                    continue;
+
+                positions[placedCount] = pos;
+                rotations[placedCount] = rot;
+                scales[placedCount] = scale;
+                typeIds[placedCount] = typeId;
+                angularVel[placedCount] = angVelDeg;
+                baseRadii[placedCount] = baseRadius;
+                placedCount++;
+            }
         }
 
         if (placedCount != settings.count)
@@ -431,8 +478,6 @@ public static class AsteroidFieldRuntimeGenerator
             Array.Resize(ref angularVel, placedCount);
             Array.Resize(ref baseRadii, placedCount);
         }
-
-        Vector3 gridOrigin = fieldCenter - fieldSize * 0.5f;
 
         long[] cellKeys = Array.Empty<long>();
         int[] cellStarts = Array.Empty<int>();
@@ -463,5 +508,204 @@ public static class AsteroidFieldRuntimeGenerator
         data.cellStarts = cellStarts;
         data.cellIndices = cellIndices;
     }
+    private sealed class PlacementHash
+    {
+        public readonly Dictionary<long, List<int>> cellToIndices;
+        public readonly Dictionary<long, int> cellCounts;
+
+        public PlacementHash(int capacityHint)
+        {
+            cellToIndices = new Dictionary<long, List<int>>(capacityHint);
+            cellCounts = new Dictionary<long, int>(capacityHint);
+        }
+
+        public int GetCellCount(long key)
+        {
+            return cellCounts.TryGetValue(key, out int c) ? c : 0;
+        }
+
+        public void IncrementCellCount(long key)
+        {
+            cellCounts.TryGetValue(key, out int c);
+            cellCounts[key] = c + 1;
+        }
+
+        public void AddIndex(long key, int index)
+        {
+            if (!cellToIndices.TryGetValue(key, out var list))
+            {
+                list = new List<int>(4);
+                cellToIndices.Add(key, list);
+            }
+            list.Add(index);
+        }
+    }
+
+    private static float ComputeMaxPossibleRadius(Settings s)
+    {
+        float maxBase = 0f;
+        for (int i = 0; i < s.types.Count; i++)
+        {
+            var t = s.types[i];
+            if (t == null) continue;
+            maxBase = Mathf.Max(maxBase, Mathf.Max(0.0001f, t.baseRadius));
+        }
+
+        float maxScale = Mathf.Max(s.uniformScaleRange.x, s.uniformScaleRange.y);
+        return maxBase * maxScale;
+    }
+
+    private static int PlaceUsingGridJitter(
+    System.Random rng,
+    Settings s,
+    Vector3 gridOrigin,
+    Vector3 fieldCenter,
+    Vector3 fieldSize,
+    float cellSize,
+    float maxPossibleRadius,
+    Vector3[] positions,
+    Quaternion[] rotations,
+    float[] scales,
+    int[] typeIds,
+    Vector3[] angularVel,
+    float[] baseRadii,
+    List<PlacedSphere> placed,
+    PlacementHash hash)
+    {
+        int target = s.count;
+        int placedCount = 0;
+
+        // How many cells exist along each axis within this chunk?
+        int nx = Mathf.Max(1, Mathf.CeilToInt(fieldSize.x / cellSize));
+        int ny = Mathf.Max(1, Mathf.CeilToInt(fieldSize.y / cellSize));
+        int nz = Mathf.Max(1, Mathf.CeilToInt(fieldSize.z / cellSize));
+
+        int candidatesPerCell = Mathf.Max(1, s.candidatesPerCell);
+        int maxPerCell = Mathf.Max(1, s.maxPerCell);
+
+        // Controls total time spent trying to fill the chunk.
+        int maxCellPicks = Mathf.Max(1, s.maxCellPicks);
+
+        float pad = Mathf.Max(0f, s.separationPadding);
+
+        for (int pick = 0; pick < maxCellPicks && placedCount < target; pick++)
+        {
+            // Pick a random cell in the chunk (this avoids iterating 100k+ cells).
+            int cx = rng.Next(0, nx);
+            int cy = rng.Next(0, ny);
+            int cz = rng.Next(0, nz);
+
+            long cellKey = PackCell(cx, cy, cz);
+
+            // Per-cell cap (prevents “one cell became a clump” artifacts).
+            if (hash.GetCellCount(cellKey) >= maxPerCell)
+                continue;
+
+            // Try a handful of jittered candidates inside this cell.
+            for (int c = 0; c < candidatesPerCell && placedCount < target; c++)
+            {
+                // Jittered point inside cell
+                Vector3 pos = RandomPointInCell(rng, gridOrigin, cx, cy, cz, cellSize);
+
+                int typeId = PickWeightedTypeIndex(rng, s.types);
+                if (typeId < 0 || typeId >= s.types.Count) continue;
+                var entry = s.types[typeId];
+                if (entry == null) continue;
+
+                float scale = RandomRange(rng, s.uniformScaleRange.x, s.uniformScaleRange.y);
+                float baseRadius = Mathf.Max(0.0001f, entry.baseRadius);
+                float radius = baseRadius * scale;
+
+                if (IsOverlappingHashed(pos, radius, gridOrigin, cellSize, maxPossibleRadius, pad, placed, hash.cellToIndices))
+                    continue;
+
+                Quaternion rot = s.randomRotation ? RandomRotation(rng) : Quaternion.identity;
+
+                float min = s.angularSpeedRangeDeg.x;
+                float max = s.angularSpeedRangeDeg.y;
+                if (max < min) (min, max) = (max, min);
+
+                Vector3 angVelDeg = new Vector3(
+                    RandomSignedRange(rng, min, max),
+                    RandomSignedRange(rng, min, max),
+                    RandomSignedRange(rng, min, max)
+                );
+
+                // Commit
+                positions[placedCount] = pos;
+                rotations[placedCount] = rot;
+                scales[placedCount] = scale;
+                typeIds[placedCount] = typeId;
+                angularVel[placedCount] = angVelDeg;
+                baseRadii[placedCount] = baseRadius;
+
+                placed.Add(new PlacedSphere { center = pos, radius = radius });
+
+                // Update hash
+                int newIndex = placed.Count - 1;
+                hash.AddIndex(cellKey, newIndex);
+                hash.IncrementCellCount(cellKey);
+
+                placedCount++;
+
+                // If we hit per-cell cap, stop trying this cell.
+                if (hash.GetCellCount(cellKey) >= maxPerCell)
+                    break;
+            }
+        }
+
+        return placedCount;
+    }
+
+    private static Vector3 RandomPointInCell(System.Random rng, Vector3 origin, int cx, int cy, int cz, float cellSize)
+    {
+        // Uniform jitter inside the cell (not center-jitter only).
+        float x = (cx + (float)rng.NextDouble()) * cellSize;
+        float y = (cy + (float)rng.NextDouble()) * cellSize;
+        float z = (cz + (float)rng.NextDouble()) * cellSize;
+        return origin + new Vector3(x, y, z);
+    }
+
+    private static bool IsOverlappingHashed(
+        Vector3 candidateCenter,
+        float candidateRadius,
+        Vector3 origin,
+        float cellSize,
+        float maxPossibleRadius,
+        float padding,
+        List<PlacedSphere> placed,
+        Dictionary<long, List<int>> cellToIndices)
+    {
+        // Conservative neighbor range so we never miss overlaps even with variable radii.
+        float reach = candidateRadius + maxPossibleRadius + padding;
+        int r = Mathf.Max(1, Mathf.CeilToInt(reach / cellSize));
+
+        int ccx = Mathf.FloorToInt((candidateCenter.x - origin.x) / cellSize);
+        int ccy = Mathf.FloorToInt((candidateCenter.y - origin.y) / cellSize);
+        int ccz = Mathf.FloorToInt((candidateCenter.z - origin.z) / cellSize);
+
+        float pad = Mathf.Max(0f, padding);
+
+        for (int dz = -r; dz <= r; dz++)
+            for (int dy = -r; dy <= r; dy++)
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    long key = PackCell(ccx + dx, ccy + dy, ccz + dz);
+
+                    if (!cellToIndices.TryGetValue(key, out var list))
+                        continue;
+
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        var s = placed[list[i]];
+                        float minDist = s.radius + candidateRadius + pad;
+                        if ((s.center - candidateCenter).sqrMagnitude < minDist * minDist)
+                            return true;
+                    }
+                }
+
+        return false;
+    }
+
 
 }

@@ -135,6 +135,13 @@ public class SlingshotPlanet3D : MonoBehaviour
                 orbitAxis.Normalize();
         }
 
+        // --- Speed HUD (pseudo velocity during orbit) ---
+        Vector3 prevPos = rb.position;
+
+        // Optional: immediately show current entry speed before we zero it
+        if (SpeedHUD.Instance)
+            SpeedHUD.Instance.SetSpeed(rb.linearVelocity.magnitude);
+
         // Stop physics drift while we manually drive.
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
@@ -169,6 +176,10 @@ public class SlingshotPlanet3D : MonoBehaviour
                         // You can plug VFX/GameOver here later.
                         isOrbiting = false;
                         if (Active == this) Active = null;
+
+                        if (SpeedHUD.Instance)
+                            SpeedHUD.Instance.SetSpeed(0f);
+
                         yield break;
                     }
                 }
@@ -214,6 +225,13 @@ public class SlingshotPlanet3D : MonoBehaviour
             Vector3 targetPos = center + (radialDir * currentRadius);
             rb.MovePosition(targetPos);
 
+            // Pseudo-speed because we are kinematically moving via MovePosition
+            float pseudoSpeed = (targetPos - prevPos).magnitude / Time.fixedDeltaTime;
+            prevPos = targetPos;
+
+            if (SpeedHUD.Instance)
+                SpeedHUD.Instance.SetSpeed(pseudoSpeed);
+
             // Orientation: ship "bottom" points toward the planet (i.e., along -radialDir).
             Vector3 tangent2 = Vector3.Cross(orbitAxis, radialDir).normalized;
             AlignShipToPlanet(rb.transform, -radialDir, tangent2, orbitAxis);
@@ -230,6 +248,9 @@ public class SlingshotPlanet3D : MonoBehaviour
             tangent = Quaternion.AngleAxis(launchAngleOffsetDeg, orbitAxis) * tangent;
 
         rb.linearVelocity = tangent * launchSpeed;
+
+        if (SpeedHUD.Instance)
+            SpeedHUD.Instance.SetSpeed(rb.linearVelocity.magnitude);
 
         // Re-enable movement.
         if (cachedMoveScript) cachedMoveScript.enabled = true;
