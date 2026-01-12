@@ -98,6 +98,9 @@ public class SlingshotPlanet3D : MonoBehaviour
         isOrbiting = true;
         Active = this;
 
+        if (PlayerThrustManager.Instance)
+            PlayerThrustManager.Instance.SetOrbiting(0.5f);
+
         cachedRb = rb;
         cachedMoveScript = moveScript;
 
@@ -182,6 +185,15 @@ public class SlingshotPlanet3D : MonoBehaviour
 
                         yield break;
                     }
+
+                    if (PlayerThrustManager.Instance)
+                    {
+                        // Charge amount based on radius shrink progress OR timer.
+                        // Timer tends to feel better:
+                        float charge01 = Mathf.Clamp01(chargeTimer / 2.0f); // 2 seconds to “full”
+                        PlayerThrustManager.Instance.SetCharging(charge01);
+                    }
+
                 }
 
                 // Release to launch (only after we've started charging at least once)
@@ -193,6 +205,9 @@ public class SlingshotPlanet3D : MonoBehaviour
                 // No boosting: just wait for a click/press, then launch immediately.
                 if (!wasHeldOnCapture && held) break;
                 if (wasHeldOnCapture && !held) wasHeldOnCapture = false;
+
+                if (PlayerThrustManager.Instance)
+                    PlayerThrustManager.Instance.SetOrbiting(Mathf.Clamp01(orbitSpeed / 360f));
             }
 
             // --- Plane steering: rotate the orbit "slice" around the current radial direction ---
@@ -247,6 +262,9 @@ public class SlingshotPlanet3D : MonoBehaviour
         if (Mathf.Abs(launchAngleOffsetDeg) > 0.001f)
             tangent = Quaternion.AngleAxis(launchAngleOffsetDeg, orbitAxis) * tangent;
 
+        if (PlayerThrustManager.Instance)
+            PlayerThrustManager.Instance.OnLaunch();
+
         rb.linearVelocity = tangent * launchSpeed;
 
         if (SpeedHUD.Instance)
@@ -254,6 +272,9 @@ public class SlingshotPlanet3D : MonoBehaviour
 
         // Re-enable movement.
         if (cachedMoveScript) cachedMoveScript.enabled = true;
+
+        if (PlayerThrustManager.Instance)
+            PlayerThrustManager.Instance.ResetToIdle();
 
         isOrbiting = false;
         if (Active == this) Active = null;

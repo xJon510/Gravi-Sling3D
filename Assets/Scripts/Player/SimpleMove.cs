@@ -213,6 +213,18 @@ public class SimpleMove : MonoBehaviour
 
         rb.linearVelocity = newVel;
 
+        // Drive thruster VFX (free-flight only).
+        if (PlayerThrustManager.Instance)
+        {
+            // This "input" already exists in your code.
+            // speed01 normalized by max speed * boost cap (matches your velocity text logic).
+            float speed01 = Mathf.InverseLerp(0f, maxSpeed * boostMaxMultiplier, rb.linearVelocity.magnitude);
+
+            // boostCharge is private in your file; if you keep it private, just pass 0f.
+            // If you want, make a public getter for it. For now we’ll ignore boost:
+            PlayerThrustManager.Instance.SetFreeFlight(input, speed01, boostCharge);
+        }
+
         // --- ROTATION (keep existing flow, but make facing 3D + camera-relative) ---
         if (enableRotation)
         {
