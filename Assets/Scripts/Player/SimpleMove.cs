@@ -15,11 +15,17 @@ public class SimpleMove : MonoBehaviour
     public float damping = 2f;                 // lower = more drift
     public bool normalizeInput = true;
 
-    [Header("Boost (Hold LeftShift)")]
-    public float boostMaxMultiplier = 2.0f;   // 2.0 = up to 2x maxSpeed
-    public float boostRampUp = 1.2f;          // how fast boost charges (per second)
-    public float boostRampDown = 2.0f;        // how fast it decays when released
-    public float boostAccelMultiplier = 1.35f; // optional: stronger accel while boosting
+    [Header("Boost (Hold LeftShift) - Additive")]
+    [Tooltip("Adds this many m/s to maxSpeed at full boostCharge. (Additive, not multiplicative)")]
+    public float boostMaxSpeedAdd = 8f;     // e.g. maxSpeed 8 + 8 = 16 at full charge
+    [Tooltip("How fast boostCharge fills while held (per second).")]
+    public float boostRampUp = 1.2f;
+    [Tooltip("How fast boostCharge drains when released (per second).")]
+    public float boostRampDown = 2.0f;
+    [Tooltip("Extra acceleration (m/s^2) added while boosting at full charge.")]
+    public float boostAccelAdd = 40f;
+    [Tooltip("Optional: limit base thrust (non-boost) to maxSpeed by stopping thrust past it. Boost ignores this.")]
+    public bool limitBaseThrustToMaxSpeed = true;
 
     [Header("Rotation")]
     public bool enableRotation = true;
@@ -133,10 +139,17 @@ public class SimpleMove : MonoBehaviour
         if (Input.GetKey(KeyCode.Q)) roll += 1f;
         if (Input.GetKey(KeyCode.E)) roll -= 1f;
 
-        bool boosting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        if (input.sqrMagnitude > 0.0001f)
+        {
+            bool boosting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
-        float up = boosting ? boostRampUp : -boostRampDown;
-        boostCharge = Mathf.Clamp01(boostCharge + up * Time.fixedDeltaTime);
+            float up = boosting ? boostRampUp : -boostRampDown;
+            boostCharge = Mathf.Clamp01(boostCharge + up * Time.fixedDeltaTime);
+        }
+        else
+        {
+            boostCharge = 0f;
+        }
 
         // accumulate roll over time (so it "sticks" like space roll)
         _manualRoll += roll * manualRollSpeed * Time.fixedDeltaTime;
@@ -167,12 +180,11 @@ public class SimpleMove : MonoBehaviour
                 moveDir = dir.normalized;
         }
 
-        // --- BOOSTED SPEED/ACCEL ---
-        float boostMultiplier = Mathf.Lerp(1f, boostMaxMultiplier, boostCharge);
-        float boostedMaxSpeed = maxSpeed * boostMultiplier;
+        // --- BOOSTED SPEED/ACCEL (ADDITIVE) ---
+        float boostedMaxSpeed = maxSpeed + (boostMaxSpeedAdd * boostCharge);
 
-        // optional extra snap while boosting
-        float boostedAccel = acceleration * Mathf.Lerp(1f, boostAccelMultiplier, boostCharge);
+        // optional extra snap while boosting (additive)
+        float boostedAccel = acceleration + (boostAccelAdd * boostCharge);
 
         bool hasInput = input.sqrMagnitude > 0.0001f;
 
@@ -193,10 +205,12 @@ public class SimpleMove : MonoBehaviour
         Vector3 currentVel = rb.linearVelocity;
         Vector3 newVel = currentVel;
 
+        float dt = Time.fixedDeltaTime;
+
         if (hasInput && moveDir.sqrMagnitude > 0.0001f)
         {
             // Steer toward desired velocity, but slip can reduce steering authority.
-            newVel = Vector3.MoveTowards(currentVel, desiredVel, accelForSteering * Time.fixedDeltaTime);
+            newVel = Vector3.MoveTowards(currentVel, desiredVel, accelForSteering * dt);
         }
         else
         {
@@ -206,7 +220,7 @@ public class SimpleMove : MonoBehaviour
             if (damping > 0f)
             {
                 float effectiveDamping = damping * slipDampScale;
-                float dampFactor = Mathf.Exp(-effectiveDamping * Time.fixedDeltaTime);
+                float dampFactor = Mathf.Exp(-effectiveDamping * dt);
                 newVel *= dampFactor;
             }
         }
@@ -218,7 +232,7 @@ public class SimpleMove : MonoBehaviour
         {
             // This "input" already exists in your code.
             // speed01 normalized by max speed * boost cap (matches your velocity text logic).
-            float speed01 = Mathf.InverseLerp(0f, maxSpeed * boostMaxMultiplier, rb.linearVelocity.magnitude);
+            float speed01 = Mathf.InverseLerp(0f, maxSpeed + boostMaxSpeedAdd, rb.linearVelocity.magnitude);
 
             // boostCharge is private in your file; if you keep it private, just pass 0f.
             // If you want, make a public getter for it. For now we’ll ignore boost:
@@ -283,7 +297,7 @@ public class SimpleMove : MonoBehaviour
                 $"|V| {vel.magnitude.ToString($"F{velocityDecimals}")}";
         }
 
-        float t = Mathf.InverseLerp(0f, maxSpeed * boostMaxMultiplier, vel.magnitude);
+        float t = Mathf.InverseLerp(0f, maxSpeed + boostMaxSpeedAdd, vel.magnitude);
         velocityText.color = Color.Lerp(Color.cyan, Color.red, t);
     }
 
