@@ -69,7 +69,7 @@ public class SlingshotPlanet3D : MonoBehaviour
     private float orbitSpeed;
     private float launchSpeed;
     private float chargeTimer;
-
+    private float orbitTangentialSpeed; // units/sec along the arc
     private void Reset()
     {
         // Make sure our own collider is a trigger (common setup for capture volumes)
@@ -121,6 +121,9 @@ public class SlingshotPlanet3D : MonoBehaviour
         launchSpeed = baseLaunchSpeed;
         chargeTimer = 0f;
 
+        // Convert initial angular speed -> tangential speed (units/sec)
+        orbitTangentialSpeed = Mathf.Abs(orbitSpeed) * Mathf.Deg2Rad * currentRadius;
+
         // Define an orbit plane based on entry velocity.
         // orbitAxis = radial x velocity (normal to the plane of motion)
         Vector3 v = rb.linearVelocity;
@@ -137,9 +140,6 @@ public class SlingshotPlanet3D : MonoBehaviour
             else
                 orbitAxis.Normalize();
         }
-
-        // --- Speed HUD (pseudo velocity during orbit) ---
-        Vector3 prevPos = rb.position;
 
         // Optional: immediately show current entry speed before we zero it
         if (SpeedHUD.Instance)
@@ -165,18 +165,26 @@ public class SlingshotPlanet3D : MonoBehaviour
 
                 if (charging && held)
                 {
-                    orbitSpeed += chargeRate * Time.fixedDeltaTime;
-                    launchSpeed += chargeRate * Time.fixedDeltaTime;
-                    currentRadius = Mathf.MoveTowards(currentRadius, planetRadius, shrinkRate * Time.fixedDeltaTime);
+                    float dt = Time.fixedDeltaTime;
 
-                    chargeTimer += Time.fixedDeltaTime;
+                    // Increase launch speed (keep as-is)
+                    launchSpeed += chargeRate * dt;
+
+                    // Shrink radius
+                    currentRadius = Mathf.MoveTowards(currentRadius, planetRadius, shrinkRate * dt);
+
+                    // Increase tangential orbit speed (units/sec)
+                    orbitTangentialSpeed += chargeRate * dt;
+
+                    // Convert tangential speed -> angular speed for current radius
+                    orbitSpeed = (orbitTangentialSpeed / Mathf.Max(currentRadius, 0.001f)) * Mathf.Rad2Deg;
+
+                    chargeTimer += dt;
                     if (chargeTimer >= maxChargeTime || currentRadius <= planetRadius)
                     {
-                        // Crash / fail state. Keep it simple for now.
                         rb.linearVelocity = Vector3.zero;
                         if (cachedMoveScript) cachedMoveScript.enabled = false;
 
-                        // You can plug VFX/GameOver here later.
                         isOrbiting = false;
                         if (Active == this) Active = null;
 
@@ -188,12 +196,9 @@ public class SlingshotPlanet3D : MonoBehaviour
 
                     if (PlayerThrustManager.Instance)
                     {
-                        // Charge amount based on radius shrink progress OR timer.
-                        // Timer tends to feel better:
-                        float charge01 = Mathf.Clamp01(chargeTimer / 2.0f); // 2 seconds to “full”
+                        float charge01 = Mathf.Clamp01(chargeTimer / 2.0f);
                         PlayerThrustManager.Instance.SetCharging(charge01);
                     }
-
                 }
 
                 // Release to launch (only after we've started charging at least once)
@@ -205,9 +210,14 @@ public class SlingshotPlanet3D : MonoBehaviour
                 // No boosting: just wait for a click/press, then launch immediately.
                 if (!wasHeldOnCapture && held) break;
                 if (wasHeldOnCapture && !held) wasHeldOnCapture = false;
+            }
 
-                if (PlayerThrustManager.Instance)
-                    PlayerThrustManager.Instance.SetOrbiting(Mathf.Clamp01(orbitSpeed / 360f));
+            // If we're orbiting but not currently charging this tick, fade to idle-orbit visuals.
+            if (PlayerThrustManager.Instance)
+            {
+                bool chargingThisTick = enableBoosting && charging && held;
+                if (!chargingThisTick)
+                    PlayerThrustManager.Instance.SetOrbiting(0.5f);
             }
 
             // --- Plane steering: rotate the orbit "slice" around the current radial direction ---
@@ -233,6 +243,8 @@ public class SlingshotPlanet3D : MonoBehaviour
                 }
             }
 
+            orbitSpeed = (orbitTangentialSpeed / Mathf.Max(currentRadius, 0.001f)) * Mathf.Rad2Deg;
+
             // Advance along orbit by rotating radialDir around orbitAxis.
             float deltaDeg = orbitSpeed * Time.fixedDeltaTime;
             radialDir = Quaternion.AngleAxis(deltaDeg, orbitAxis) * radialDir;
@@ -240,12 +252,9 @@ public class SlingshotPlanet3D : MonoBehaviour
             Vector3 targetPos = center + (radialDir * currentRadius);
             rb.MovePosition(targetPos);
 
-            // Pseudo-speed because we are kinematically moving via MovePosition
-            float pseudoSpeed = (targetPos - prevPos).magnitude / Time.fixedDeltaTime;
-            prevPos = targetPos;
-
+            // HUD speed during orbit: tangential speed along the arc (units/sec)
             if (SpeedHUD.Instance)
-                SpeedHUD.Instance.SetSpeed(pseudoSpeed);
+                SpeedHUD.Instance.SetSpeed(orbitTangentialSpeed);
 
             // Orientation: ship "bottom" points toward the planet (i.e., along -radialDir).
             Vector3 tangent2 = Vector3.Cross(orbitAxis, radialDir).normalized;

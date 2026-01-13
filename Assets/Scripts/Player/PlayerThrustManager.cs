@@ -56,6 +56,7 @@ public class PlayerThrustManager : MonoBehaviour
     [SerializeField] private float free_center_boostSpeed = 1.6f;
 
     [Header("Orbiting - Center On")]
+    [SerializeField] private float orbit_center_idleRate = 0f; // center thruster when just orbiting (not charging)
     [SerializeField] private float orbit_center_rate = 25f;
     [SerializeField] private float orbit_center_lifetime = 0.16f;
     [SerializeField] private float orbit_center_speed = 2.1f;
@@ -247,12 +248,12 @@ public class PlayerThrustManager : MonoBehaviour
 
         float s = Mathf.Clamp01(orbitStrength01);
 
-        float cRate = orbit_center_rate * Mathf.Lerp(0.75f, 1.25f, s);
+        // Idle-orbit: center OFF (or very low if you want a faint glow)
+        float cRate = orbit_center_idleRate;
         float cLife = orbit_center_lifetime;
-        float cSpeed = orbit_center_speed * Mathf.Lerp(0.9f, 1.2f, s);
-        float cSize = orbit_center_size * Mathf.Lerp(0.9f, 1.15f, s);
+        float cSpeed = orbit_center_speed;
+        float cSize = orbit_center_size;
 
-        // L/R barely alive or off, your choice
         float lrRate = orbit_lr_rate;
         float lrLife = orbit_lr_lifetime;
         float lrSpeed = orbit_lr_speed;
