@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -38,6 +39,19 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
     [Tooltip("Max number of collisions resolved per FixedUpdate (safety cap).")]
     public int maxResolvesPerStep = 6;
 
+    [Header("Smash Settings")]
+    public float smashSpeedThreshold = 14f;
+    public float smashMinAlignment = 0.65f;
+    public float smashForwardNudge = 0.25f;
+    public float extraSpeedFactor = 0.75f;         // extraSpeedFactor: how much harder side hits are vs head-on.
+                                                   // 0.0 = angle doesn't matter, 1.0 = side hits need +100% speed, etc.
+
+    [Tooltip("Renderer used to hide smashed instances (instanced rendering 'deletion').")]
+    public AsteroidFieldInstancedRenderer instancedRenderer;
+
+    [Tooltip("Place Asteroid VFX Particle Systems when asteroids are destroyed")]
+    public AsteroidVFXPoolManager smashVfxPool;
+
     // Spatial hash: cellKey -> indices in that cell
     private Dictionary<long, List<int>> _cellToIndices;
 
@@ -45,6 +59,9 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
     private float[] _radii;
     private float _maxRadius;
     private Vector3 _gridOrigin;
+
+    // Track destroyed indices so we stop resolving them
+    private BitArray _destroyed;
 
     private void Awake()
     {
@@ -75,6 +92,7 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
         }
 
         int n = fieldData.count;
+        _destroyed = new BitArray(n, false);
         cellSize = Mathf.Max(0.0001f, cellSize);
 
         // Use field bounds min as a stable origin (matches how your generator defines volume bounds)
@@ -143,11 +161,17 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
                     {
                         int i = list[li];
 
+                        if (_destroyed != null && _destroyed[i])
+                            continue;
+
                         Vector3 sphereCenter = fieldData.positions[i];
                         float sphereRadius = _radii[i];
 
                         if (SphereIntersectsAABB(sphereCenter, sphereRadius, b, out Vector3 pushNormal, out float pushDist))
                         {
+                            if (TrySmash(i, pushNormal))
+                                continue;
+
                             Resolve(pushNormal, pushDist);
 
                             resolves++;
@@ -287,5 +311,81 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
         // Draw player AABB
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireCube(b.center, b.size);
+    }
+    private bool TrySmash(int index, Vector3 pushNormal)
+    {
+        if (smashSpeedThreshold <= 0f) return false;
+
+        Vector3 v = playerRb.linearVelocity;
+        float speed = v.magnitude;
+        if (speed < smashSpeedThreshold) return false;
+
+        // pushNormal points ~ from asteroid -> player.
+        // Head-on hit means velocity points into asteroid along -pushNormal.
+        float align = 0f;
+        if (speed > 0.0001f)
+            align = Vector3.Dot(v / speed, -pushNormal);   // -1..1, usually 0..1 for contact
+
+        align = Mathf.Clamp01((align + 1f) * 0.5f); // map -1..1 to 0..1
+
+        // Required speed goes up as align goes down.
+        float requiredSpeed = smashSpeedThreshold * (1f + (1f - align) * extraSpeedFactor);
+
+        if (speed < requiredSpeed)
+            return false;
+
+        Vector3 vel = playerRb.linearVelocity;
+
+        // Fallback-safe velocity direction
+        Vector3 velDir = (vel.sqrMagnitude > 1e-6f)
+            ? vel.normalized
+            : (-pushNormal);
+
+        // PushNormal points asteroid -> player, so invert for "away from impact"
+        Vector3 awayFromImpact = -pushNormal;
+
+        // Blend: mostly velocity, slightly surface response
+        Vector3 smashDir = Vector3.Normalize(
+            velDir * 0.85f +
+            awayFromImpact * 0.15f
+        );
+
+        // Scalar strength (tune this)            // How Much Speed Gets Applied - Min - Max
+        float vfxSpeed = Mathf.Clamp(vel.magnitude * 0.8f, 8f, 400f);
+
+        DestroyAsteroid(index, smashDir, vfxSpeed);
+
+        // small nudge forward so we don't remain overlapping for a frame
+        if (smashForwardNudge > 0f)
+        {
+            Vector3 dir = (speed > 0.0001f) ? (v / speed) : (-pushNormal);
+            playerRb.MovePosition(playerRb.position + dir * smashForwardNudge);
+        }
+
+        return true;
+    }
+    private void DestroyAsteroid(int index, Vector3 smashDir, float vfxSpeed)
+    {
+        if (_destroyed != null && index >= 0 && index < _destroyed.Length)
+            _destroyed[index] = true;
+
+        if (smashVfxPool != null)
+        {
+            // Example tuning knobs
+            float t = Mathf.InverseLerp(smashSpeedThreshold, smashSpeedThreshold * 2f, playerRb.linearVelocity.magnitude);
+            float dirSpeed = vfxSpeed;                                  // from your velocity-based scalar
+            float radialSpeed = Mathf.Lerp(6f, 50f, t);                // explosion strength
+            float randomSpeed = Mathf.Lerp(1f, 20f, t);                  // chaos
+            int count = Mathf.RoundToInt(Mathf.Lerp(20f, 60f, t));      // particles
+
+            Vector3 asteroidPos = fieldData.positions[index];
+            Vector3 hitPos = playerBox.bounds.ClosestPoint(asteroidPos);
+
+            smashVfxPool.SpawnImpact(hitPos, smashDir, dirSpeed, radialSpeed, randomSpeed, count);
+        }
+
+        // Hide from instanced renderer (visual deletion)
+        if (instancedRenderer != null)
+            instancedRenderer.SetInstanceHidden(fieldData, index, true);
     }
 }

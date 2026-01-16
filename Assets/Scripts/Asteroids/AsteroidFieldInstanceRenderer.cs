@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -69,9 +70,12 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
 
     private const int MaxInstancesPerCall = 1023;
 
+    private Dictionary<AsteroidFieldData, BitArray> _hiddenByData;
+
     private void OnEnable()
     {
-        //InitIfNeeded(force: true);
+        if (_hiddenByData == null)
+            _hiddenByData = new Dictionary<AsteroidFieldData, BitArray>();
     }
 
     private void OnDisable()
@@ -207,6 +211,9 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
         // Bucketize
         for (int i = 0; i < n; i++)
         {
+            if (IsHidden(fieldData, i))
+                continue;
+
             int typeId = (typeIds != null && i < typeIds.Length) ? typeIds[i] : 0;
             if (typeId < 0 || typeId >= typeCount)
                 continue;
@@ -293,5 +300,35 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
     private static bool IsFinite(Quaternion q)
     {
         return float.IsFinite(q.x) && float.IsFinite(q.y) && float.IsFinite(q.z) && float.IsFinite(q.w);
+    }
+
+    private bool IsHidden(AsteroidFieldData data, int index)
+    {
+        if (_hiddenByData == null || data == null)
+            return false;
+
+        if (!_hiddenByData.TryGetValue(data, out var mask) || mask == null)
+            return false;
+
+        if (index < 0 || index >= mask.Length)
+            return false;
+
+        return mask[index];
+    }
+
+    public void SetInstanceHidden(AsteroidFieldData data, int index, bool hidden)
+    {
+        if (data == null || data.count <= 0) return;
+
+        int n = data.count;
+        if (index < 0 || index >= n) return;
+
+        if (!_hiddenByData.TryGetValue(data, out var mask) || mask == null || mask.Length != n)
+        {
+            mask = new BitArray(n, false);
+            _hiddenByData[data] = mask;
+        }
+
+        mask[index] = hidden;
     }
 }
