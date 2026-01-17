@@ -11,6 +11,15 @@ public class SlingshotPlanet3D : MonoBehaviour
     [Tooltip("Radius at which the ship orbits when captured.")]
     public float orbitRadius = 18f;
 
+    [Tooltip("How quickly the ship aligns during the smoothing window. Higher = faster.")]
+    public float orientationAlignSharpness = 20f;
+
+    [Tooltip("Seconds to ramp from smooth capture to fully locked alignment.")]
+    public float alignRampDuration = 0.35f;
+
+    [Tooltip("Curve mapping 0..1 time -> 0..1 lock amount. 0 = fully smooth, 1 = fully locked.")]
+    public AnimationCurve alignRamp = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
     [Tooltip("Optional: only capture objects with this tag (leave empty to ignore).")]
     public string requiredTag = "";
 
@@ -32,6 +41,17 @@ public class SlingshotPlanet3D : MonoBehaviour
 
     [Tooltip("Safety timer for overcharge -> crash.")]
     public float maxChargeTime = 60f;
+
+    [Header("Orbit Speed from Momentum")]
+    [Tooltip("Minimum tangential orbit speed on capture (m/s). Helps slow entries feel snappy.")]
+    public float minCaptureTangentialSpeed = 35f;
+
+    [Tooltip("Maximum tangential orbit speed on capture (m/s). Prevents crazy fast orbit visuals.")]
+    public float maxCaptureTangentialSpeed = 500f;
+
+    [Tooltip("How much of the ship's incoming tangential speed is preserved on capture (0-1).")]
+    [Range(0f, 1f)]
+    public float captureMomentumPreserve = 0.85f;
 
     [Header("Ship Orientation")]
     [Tooltip("Which local axis is the ship's 'bottom'? For most models, bottom is -up (Vector3.down).")]
@@ -58,6 +78,8 @@ public class SlingshotPlanet3D : MonoBehaviour
     [Tooltip("Invert which key rotates the plane direction.")]
     public bool invertPlaneSteer = false;
 
+    private bool orbitInverted; // true = ship TOP faces planet (ship stays upside down)
+
     private bool isOrbiting;
     public static SlingshotPlanet3D Active;
 
@@ -70,6 +92,8 @@ public class SlingshotPlanet3D : MonoBehaviour
     private float launchSpeed;
     private float chargeTimer;
     private float orbitTangentialSpeed; // units/sec along the arc
+    private float orbitStartTime;
+
     private void Reset()
     {
         // Make sure our own collider is a trigger (common setup for capture volumes)
@@ -96,6 +120,7 @@ public class SlingshotPlanet3D : MonoBehaviour
     private IEnumerator OrbitAndCharge(Rigidbody rb, MonoBehaviour moveScript)
     {
         isOrbiting = true;
+        orbitStartTime = Time.time;
         Active = this;
 
         if (PlayerThrustManager.Instance)
@@ -116,6 +141,19 @@ public class SlingshotPlanet3D : MonoBehaviour
 
         radialDir = toShip.normalized;
         currentRadius = orbitRadius;
+
+        // Decide whether to keep the ship inverted to minimize snap.
+        // Compare which ship axis is already closer to pointing at the planet (i.e., along -radialDir).
+        Vector3 desiredToPlanet = (-radialDir).normalized;
+
+        Vector3 bottomWorld = rb.transform.TransformDirection(localShipBottomAxis).normalized;
+        Vector3 topWorld = -bottomWorld;
+
+        float bottomDot = Vector3.Dot(bottomWorld, desiredToPlanet);
+        float topDot = Vector3.Dot(topWorld, desiredToPlanet);
+
+        // If the ship's "top" is already closer to the planet, keep it inverted during this orbit.
+        orbitInverted = topDot > bottomDot;
 
         orbitSpeed = baseOrbitSpeedDegPerSec;
         launchSpeed = baseLaunchSpeed;
@@ -140,6 +178,22 @@ public class SlingshotPlanet3D : MonoBehaviour
             else
                 orbitAxis.Normalize();
         }
+
+        // Incoming speed (full magnitude, not just tangential)
+        float incomingSpeed = v.magnitude;
+
+        // Optional preserve (set to 1 if you truly want "whatever it is")
+        float preserved = incomingSpeed * captureMomentumPreserve;
+
+        // Clamp (optional) — remove clamp if you really want raw
+        orbitTangentialSpeed = Mathf.Clamp(
+            Mathf.Max(preserved, minCaptureTangentialSpeed),
+            minCaptureTangentialSpeed,
+            maxCaptureTangentialSpeed
+        );
+
+        // Convert to orbitSpeed degrees/sec for your existing system.
+        orbitSpeed = (orbitTangentialSpeed / Mathf.Max(currentRadius, 0.001f)) * Mathf.Rad2Deg;
 
         // Optional: immediately show current entry speed before we zero it
         if (SpeedHUD.Instance)
@@ -167,17 +221,12 @@ public class SlingshotPlanet3D : MonoBehaviour
                 {
                     float dt = Time.fixedDeltaTime;
 
-                    // Increase launch speed (keep as-is)
-                    launchSpeed += chargeRate * dt;
-
                     // Shrink radius
                     currentRadius = Mathf.MoveTowards(currentRadius, planetRadius, shrinkRate * dt);
 
-                    // Increase tangential orbit speed (units/sec)
                     orbitTangentialSpeed += chargeRate * dt;
 
-                    // Convert tangential speed -> angular speed for current radius
-                    orbitSpeed = (orbitTangentialSpeed / Mathf.Max(currentRadius, 0.001f)) * Mathf.Rad2Deg;
+                    launchSpeed = Mathf.Max(baseLaunchSpeed, orbitTangentialSpeed);
 
                     chargeTimer += dt;
                     if (chargeTimer >= maxChargeTime || currentRadius <= planetRadius)
@@ -258,7 +307,10 @@ public class SlingshotPlanet3D : MonoBehaviour
 
             // Orientation: ship "bottom" points toward the planet (i.e., along -radialDir).
             Vector3 tangent2 = Vector3.Cross(orbitAxis, radialDir).normalized;
-            AlignShipToPlanet(rb.transform, -radialDir, tangent2, orbitAxis);
+            Vector3 desiredBottomDir = orbitInverted ? radialDir : -radialDir; // inverted flips which side faces planet
+            float u = Mathf.Clamp01((Time.time - orbitStartTime) / Mathf.Max(alignRampDuration, 0.001f));
+            float lock01 = alignRamp.Evaluate(u); // 0..1
+            AlignShipToPlanet(rb.transform, desiredBottomDir, tangent2, orbitAxis, lock01);
 
             yield return new WaitForFixedUpdate();
         }
@@ -300,7 +352,8 @@ public class SlingshotPlanet3D : MonoBehaviour
         Transform ship,
         Vector3 desiredBottomWorldDir,
         Vector3 desiredForwardWorldDir,
-        Vector3 orbitAxisWorld
+        Vector3 orbitAxisWorld,
+        float lock01
     )
     {
         desiredBottomWorldDir = desiredBottomWorldDir.normalized;
@@ -337,7 +390,15 @@ public class SlingshotPlanet3D : MonoBehaviour
         if (Mathf.Abs(rollOffsetDeg) > 0.001f)
             rotAfterBottom = Quaternion.AngleAxis(rollOffsetDeg, orbitAxisWorld) * rotAfterBottom;
 
-        ship.rotation = rotAfterBottom;
+        // Smooth step (slerp) amount this frame
+        float smoothT = (orientationAlignSharpness <= 0f) ? 1f
+            : (1f - Mathf.Exp(-orientationAlignSharpness * Time.fixedDeltaTime));
+
+        Quaternion smoothRot = Quaternion.Slerp(ship.rotation, rotAfterBottom, smoothT);
+
+        // lock01=0 => fully smoothRot
+        // lock01=1 => fully rotAfterBottom (snapped/locked)
+        ship.rotation = Quaternion.Slerp(smoothRot, rotAfterBottom, lock01);
     }
 
     private void OnDrawGizmosSelected()

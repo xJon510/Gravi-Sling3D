@@ -60,6 +60,11 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
              "This updates rotations & matrices each frame in play mode.")]
     public bool applyRotationDriftInPlayMode = false;
 
+    [Header("Voxel Paint (World Cell Size per LOD)")]
+    public float lod0VoxelCellSize = 0.25f;
+    public float lod1VoxelCellSize = 0.5f;
+    public float lod2VoxelCellSize = 1.0f;
+
     // Internal cached matrices (one per instance)
     private Matrix4x4[] _matrices;
     private Quaternion[] _runtimeRotations; // only used if drift is enabled
@@ -72,10 +77,15 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
 
     private Dictionary<AsteroidFieldData, BitArray> _hiddenByData;
 
+    private static readonly int VoxelCellSizeID = Shader.PropertyToID("_VoxelCellSize");
+    private MaterialPropertyBlock _mpb;
+
     private void OnEnable()
     {
         if (_hiddenByData == null)
             _hiddenByData = new Dictionary<AsteroidFieldData, BitArray>();
+
+        _mpb ??= new MaterialPropertyBlock();
     }
 
     private void OnDisable()
@@ -237,17 +247,19 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
             if (tr == null || !tr.IsValid)
                 continue;
 
-            DrawBucket(tr.lod0Mesh, tr.material, _buckets[typeId, 0]);
-            DrawBucket(tr.lod1Mesh, tr.material, _buckets[typeId, 1]);
-            DrawBucket(tr.lod2Mesh, tr.material, _buckets[typeId, 2]);
+            DrawBucket(tr.lod0Mesh, tr.material, _buckets[typeId, 0], lod0VoxelCellSize);
+            DrawBucket(tr.lod1Mesh, tr.material, _buckets[typeId, 1], lod1VoxelCellSize);
+            DrawBucket(tr.lod2Mesh, tr.material, _buckets[typeId, 2], lod2VoxelCellSize);
         }
     }
 
-    private void DrawBucket(Mesh mesh, Material mat, List<Matrix4x4> matrices)
+    private void DrawBucket(Mesh mesh, Material mat, List<Matrix4x4> matrices, float voxelCellSize)
     {
         int count = matrices.Count;
         if (count <= 0)
             return;
+
+        _mpb.SetFloat(VoxelCellSizeID, voxelCellSize);
 
         // Chunk because DrawMeshInstanced caps at 1023
         int offset = 0;
@@ -261,13 +273,14 @@ public class AsteroidFieldInstancedRenderer : MonoBehaviour
             Matrix4x4[] buffer = MatrixBufferCache.Get(batchCount);
             matrices.CopyTo(offset, buffer, 0, batchCount);
 
+
             Graphics.DrawMeshInstanced(
                 mesh,
                 submeshIndex: 0,
                 material: mat,
                 matrices: buffer,
                 count: batchCount,
-                properties: null,
+                properties: _mpb,
                 castShadows: shadowCasting,
                 receiveShadows: receiveShadows,
                 layer: renderLayer,

@@ -349,4 +349,8 @@ public class SimpleMove : MonoBehaviour
 
         return roll * facing;
     }
+    void OnCollisionStay(Collision c)
+    {
+        Debug.Log("Colliding with: " + c.collider.name);
+    }
 }
