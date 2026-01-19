@@ -139,16 +139,23 @@ public class SimpleMove : MonoBehaviour
         if (Input.GetKey(KeyCode.Q)) roll += 1f;
         if (Input.GetKey(KeyCode.E)) roll -= 1f;
 
-        if (input.sqrMagnitude > 0.0001f)
-        {
-            bool boosting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        bool boostHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        bool hasInput = input.sqrMagnitude > 0.0001f;
 
-            float up = boosting ? boostRampUp : -boostRampDown;
-            boostCharge = Mathf.Clamp01(boostCharge + up * Time.fixedDeltaTime);
+        if (BoostManager.Instance)
+        {
+            BoostManager.Instance.SetBoostInput(boostHeld, hasInput);
+            boostCharge = BoostManager.Instance.Boost01; // reuse your existing float
         }
         else
         {
-            boostCharge = 0f;
+            // Fallback: old behavior if BoostManager missing
+            if (hasInput)
+            {
+                float up = boostHeld ? boostRampUp : -boostRampDown;
+                boostCharge = Mathf.Clamp01(boostCharge + up * Time.fixedDeltaTime);
+            }
+            else boostCharge = 0f;
         }
 
         // accumulate roll over time (so it "sticks" like space roll)
@@ -185,8 +192,6 @@ public class SimpleMove : MonoBehaviour
 
         // optional extra snap while boosting (additive)
         float boostedAccel = acceleration + (boostAccelAdd * boostCharge);
-
-        bool hasInput = input.sqrMagnitude > 0.0001f;
 
         // Slip influence: 1 at full slip, 0 at normal
         float slip01 = (enableSlip ? slipFactor : 0f);

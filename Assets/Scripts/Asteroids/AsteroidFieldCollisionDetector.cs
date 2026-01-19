@@ -46,6 +46,22 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
     public float extraSpeedFactor = 0.75f;         // extraSpeedFactor: how much harder side hits are vs head-on.
                                                    // 0.0 = angle doesn't matter, 1.0 = side hits need +100% speed, etc.
 
+    [Header("Smash Momentum Loss")]
+    [Tooltip("Design reference speed where smash loss reaches minimum (NOT a cap).")]
+    public float smashDesignMaxSpeed = 250f;
+
+    [Tooltip("Velocity loss when smashing at threshold speed (0.25 = lose 25%).")]
+    [Range(0f, 1f)] public float smashLossAtThreshold = 0.35f;
+
+    [Tooltip("Velocity loss when smashing at/above design max speed.")]
+    [Range(0f, 1f)] public float smashLossAtMax = 0.06f;
+
+    [Tooltip("Curve over normalized speed t (0=threshold, 1=design max). Output 0..1.")]
+    public AnimationCurve smashLossCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Tooltip("Optional: keep at least this fraction of your speed after smash.")]
+    [Range(0f, 1f)] public float smashMinSpeedFraction = 0.15f;
+
     [Tooltip("Renderer used to hide smashed instances (instanced rendering 'deletion').")]
     public AsteroidFieldInstancedRenderer instancedRenderer;
 
@@ -360,6 +376,41 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
         {
             Vector3 dir = (speed > 0.0001f) ? (v / speed) : (-pushNormal);
             playerRb.MovePosition(playerRb.position + dir * smashForwardNudge);
+        }
+
+        // --- speed-scaled momentum loss on smash ---
+        if (smashLossAtThreshold > 0f || smashLossAtMax > 0f)
+        {
+            float preSpeed = playerRb.linearVelocity.magnitude;
+
+            // Normalize: 0 at threshold, 1 at design max (clamped)
+            float denom = Mathf.Max(0.0001f, smashDesignMaxSpeed - smashSpeedThreshold);
+            float t = Mathf.Clamp01((preSpeed - smashSpeedThreshold) / denom);
+
+            // Curve shapes how quickly we "become a bullet"
+            float k = smashLossCurve.Evaluate(t); // 0..1
+
+            // Lerp loss: high t => closer to smashLossAtMax
+            float loss = Mathf.Lerp(smashLossAtThreshold, smashLossAtMax, k);
+
+            // Apply multiplicative shave (keeps direction)
+            float keep = Mathf.Clamp01(1f - loss);
+
+            // Optional floor so you never fully stall from a smash
+            keep = Mathf.Max(keep, smashMinSpeedFraction);
+
+            playerRb.linearVelocity *= keep;
+
+            if (SimpleFollowCamera.Instance)
+            {
+                // Fraction of speed removed this smash (0..1)
+                float lossFrac = 1f - keep;
+
+                // Kick direction: opposite the impact (pushNormal is asteroid -> player)
+                Vector3 kickDir = pushNormal;
+
+                SimpleFollowCamera.Instance.AddShakeImpulse(kickDir, lossFrac);
+            }
         }
 
         return true;

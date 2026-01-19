@@ -120,7 +120,12 @@ public class SlingshotPlanet3D : MonoBehaviour
     private IEnumerator OrbitAndCharge(Rigidbody rb, MonoBehaviour moveScript)
     {
         isOrbiting = true;
+
+        if (BoostManager.Instance)
+            BoostManager.Instance.SetMode(BoostManager.Mode.OrbitIdle);
+
         orbitStartTime = Time.time;
+
         Active = this;
 
         if (PlayerThrustManager.Instance)
@@ -267,6 +272,8 @@ public class SlingshotPlanet3D : MonoBehaviour
                 bool chargingThisTick = enableBoosting && charging && held;
                 if (!chargingThisTick)
                     PlayerThrustManager.Instance.SetOrbiting(0.5f);
+                if (BoostManager.Instance)
+                    BoostManager.Instance.SetMode(chargingThisTick ? BoostManager.Mode.OrbitCharging : BoostManager.Mode.OrbitIdle);
             }
 
             // --- Plane steering: rotate the orbit "slice" around the current radial direction ---
@@ -330,6 +337,9 @@ public class SlingshotPlanet3D : MonoBehaviour
 
         if (SpeedHUD.Instance)
             SpeedHUD.Instance.SetSpeed(rb.linearVelocity.magnitude);
+
+        if (BoostManager.Instance)
+            BoostManager.Instance.SetMode(BoostManager.Mode.FreeFlight);
 
         // Re-enable movement.
         if (cachedMoveScript) cachedMoveScript.enabled = true;
