@@ -80,7 +80,8 @@ public static class AsteroidFieldRuntimeGenerator
         Settings settings,
         Vector3 chunkOrigin,
         float chunkSize,
-        int seed)
+        int seed,
+        IReadOnlyList<PlanetSectorGenerator.PlanetNode> planets)
     {
         if (!CanGenerate(settings))
             throw new InvalidOperationException("AsteroidFieldRuntimeGenerator: invalid settings (types/weights/count).");
@@ -126,7 +127,8 @@ public static class AsteroidFieldRuntimeGenerator
                 gridOrigin, fieldCenter, fieldSize,
                 cellSize, maxPossibleRadius,
                 positions, rotations, scales, typeIds, angularVel, baseRadii,
-                placed, hash
+                placed, hash,
+                planets
             );
         }
         else
@@ -402,7 +404,8 @@ public static class AsteroidFieldRuntimeGenerator
     Settings settings,
     Vector3 chunkOrigin,
     float chunkSize,
-    int seed)
+    int seed,
+    IReadOnlyList<PlanetSectorGenerator.PlanetNode> planets)
     {
         if (!CanGenerate(settings))
             throw new InvalidOperationException("AsteroidFieldRuntimeGenerator: invalid settings.");
@@ -445,7 +448,8 @@ public static class AsteroidFieldRuntimeGenerator
                 gridOrigin, fieldCenter, fieldSize,
                 cellSize, maxPossibleRadius,
                 positions, rotations, scales, typeIds, angularVel, baseRadii,
-                placed, hash
+                placed, hash,
+                planets
             );
         }
         else
@@ -570,7 +574,8 @@ public static class AsteroidFieldRuntimeGenerator
     Vector3[] angularVel,
     float[] baseRadii,
     List<PlacedSphere> placed,
-    PlacementHash hash)
+    PlacementHash hash,
+    IReadOnlyList<PlanetSectorGenerator.PlanetNode> planets)
     {
         int target = s.count;
         int placedCount = 0;
@@ -615,6 +620,12 @@ public static class AsteroidFieldRuntimeGenerator
                 float scale = RandomRange(rng, s.uniformScaleRange.x, s.uniformScaleRange.y);
                 float baseRadius = Mathf.Max(0.0001f, entry.baseRadius);
                 float radius = baseRadius * scale;
+
+                if (planets != null && planets.Count > 0)
+                {
+                    if (IsInsideAnyPlanetAvoid(pos, radius, planets))
+                        continue;
+                }
 
                 if (IsOverlappingHashed(pos, radius, gridOrigin, cellSize, maxPossibleRadius, pad, placed, hash.cellToIndices))
                     continue;
@@ -707,5 +718,18 @@ public static class AsteroidFieldRuntimeGenerator
         return false;
     }
 
+    private static bool IsInsideAnyPlanetAvoid(
+    Vector3 asteroidCenter,
+    float asteroidRadius,
+    IReadOnlyList<PlanetSectorGenerator.PlanetNode> planets)
+    {
+        for (int i = 0; i < planets.Count; i++)
+        {
+            float r = planets[i].avoidRadius + asteroidRadius;
+            if ((asteroidCenter - planets[i].position).sqrMagnitude < r * r)
+                return true;
+        }
+        return false;
+    }
 
 }

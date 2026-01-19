@@ -24,6 +24,11 @@ public class AsteroidPosManager : MonoBehaviour
     public int globalSeed = 12345;
     public AsteroidFieldRuntimeGenerator.Settings settings = new AsteroidFieldRuntimeGenerator.Settings();
 
+    [Header("Planets (super basic)")]
+    public float planetCellSize = 3000f;
+    public float planetAvoidRadius = 200f;
+    [Range(0f, 1f)] public float planetSpawnChance = 0.35f;
+
     [Header("Debug")]
     public bool generateOnStart = true;
     public bool logChunkCreates = true;
@@ -36,6 +41,8 @@ public class AsteroidPosManager : MonoBehaviour
 
     private Vector3Int _centerChunk;
     private Vector3Int _lastCenterChunk;
+
+    private readonly List<PlanetSectorGenerator.PlanetNode> _tmpPlanets = new List<PlanetSectorGenerator.PlanetNode>(32);
 
     private void Awake()
     {
@@ -103,11 +110,21 @@ public class AsteroidPosManager : MonoBehaviour
 
         int seed = HashSeed(globalSeed, coord);
 
+        PlanetSectorGenerator.GetPlanetsForChunk(
+            globalSeed,
+            chunkOrigin,
+            chunkSize,
+            planetCellSize,
+            planetAvoidRadius,
+            planetSpawnChance,
+            _tmpPlanets);
+
         AsteroidFieldData data = AsteroidFieldRuntimeGenerator.GenerateChunk(
             settings,
             chunkOrigin,
             chunkSize,
-            seed);
+            seed,
+            _tmpPlanets);
 
         _chunks[coord] = data;
 
@@ -198,13 +215,22 @@ public class AsteroidPosManager : MonoBehaviour
 
         data.Clear(); // reuse memory object
 
+        PlanetSectorGenerator.GetPlanetsForChunk(
+            globalSeed,
+            origin,
+            chunkSize,
+            planetCellSize,
+            planetAvoidRadius,
+            planetSpawnChance,
+            _tmpPlanets);
+
         AsteroidFieldRuntimeGenerator.FillExistingChunk(
             data,
             settings,
             origin,
             chunkSize,
-            seed
-        );
+            seed,
+            _tmpPlanets);
     }
     private void UpdateCollisionChunk(Vector3Int centerChunk)
     {
