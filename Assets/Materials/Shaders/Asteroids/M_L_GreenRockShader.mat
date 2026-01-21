@@ -57,13 +57,14 @@ Material:
     - _FarCurvePower: 1.5
     - _FarFadeEnd: 1000
     - _FarFadeStart: 550
-    - _Metallic: 1
+    - _Metallic: 0.9
     - _NearBlendDist: 20
     - _NearBrightness: 1.15
     - _NearFreezeDist: 20
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Smoothness: 0
+    - _VoxelCellSize: 0.1
     m_Colors:
     - _BaseColor: {r: 0.32941177, g: 0.36078432, b: 0.16470589, a: 1}
     - _FadeColor: {r: 0.03529412, g: 0.03529412, b: 0.06666667, a: 0}

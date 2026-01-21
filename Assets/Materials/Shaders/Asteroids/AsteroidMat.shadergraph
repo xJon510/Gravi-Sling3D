@@ -4880,7 +4880,7 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "Max",
     "m_StageCapability": 3,
-    "m_Value": 1.0,
+    "m_Value": 2.0,
     "m_DefaultValue": 1.0,
     "m_Labels": []
 }
@@ -5431,7 +5431,7 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "Min",
     "m_StageCapability": 3,
-    "m_Value": 0.0,
+    "m_Value": 0.5,
     "m_DefaultValue": 0.0,
     "m_Labels": []
 }
@@ -6425,7 +6425,7 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "Max",
     "m_StageCapability": 3,
-    "m_Value": 1.0,
+    "m_Value": 2.0,
     "m_DefaultValue": 1.0,
     "m_Labels": []
 }
@@ -8879,7 +8879,7 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "Max",
     "m_StageCapability": 3,
-    "m_Value": 1.0,
+    "m_Value": 2.0,
     "m_DefaultValue": 1.0,
     "m_Labels": []
 }
@@ -9434,7 +9434,7 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "Min",
     "m_StageCapability": 3,
-    "m_Value": 0.0,
+    "m_Value": 0.5,
     "m_DefaultValue": 0.0,
     "m_Labels": []
 }
@@ -9708,7 +9708,7 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "Min",
     "m_StageCapability": 3,
-    "m_Value": 0.0,
+    "m_Value": 0.5,
     "m_DefaultValue": 0.0,
     "m_Labels": []
 }

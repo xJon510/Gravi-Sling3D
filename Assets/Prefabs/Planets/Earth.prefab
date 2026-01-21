@@ -127,7 +127,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 60
+  m_Radius: 70
   m_Center: {x: 0.30517292, y: 0.30517292, z: 0.30517292}
 --- !u!114 &4417917199149181993
 MonoBehaviour:
@@ -142,7 +142,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   planetRadius: 45
-  orbitRadius: 120
+  orbitRadius: 140
   orientationAlignSharpness: 20
   alignRampDuration: 1
   alignRamp:
@@ -174,8 +174,8 @@ MonoBehaviour:
   baseLaunchSpeed: 80
   launchAngleOffsetDeg: 0
   enableBoosting: 1
-  chargeRate: 80
-  shrinkRate: 5
+  chargeRate: 60
+  shrinkRate: 10
   maxChargeTime: 60
   minCaptureTangentialSpeed: 35
   maxCaptureTangentialSpeed: 500
