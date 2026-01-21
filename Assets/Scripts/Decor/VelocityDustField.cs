@@ -15,9 +15,6 @@ public class VelocityDustField : MonoBehaviour
     [Tooltip("Multiplier for how fast dust flows past you relative to ship speed.")]
     public float flowMultiplier = 1.0f;
 
-    [Tooltip("Extra gentle drift when almost stopped (local space).")]
-    public float idleDriftSpeed = 0.4f;
-
     [Header("Trails")]
     public bool driveTrails = true;
     public float trailLifetimeAtZero = 0.02f;
@@ -65,17 +62,6 @@ public class VelocityDustField : MonoBehaviour
 
         // Move dust opposite our movement direction so it streams past us
         Vector3 localFlow = -localDir * flowSpeed;
-
-        // Add subtle idle drift so "stopped" doesn't look frozen
-        if (speed < 1.0f)
-        {
-            // small sideways drift in local space
-            localFlow += new Vector3(
-                Mathf.Sin(Time.time * 0.9f),
-                Mathf.Sin(Time.time * 1.1f + 1.7f),
-                Mathf.Sin(Time.time * 0.7f + 3.1f)
-            ) * idleDriftSpeed;
-        }
 
         vol.x = new ParticleSystem.MinMaxCurve(localFlow.x);
         vol.y = new ParticleSystem.MinMaxCurve(localFlow.y);
