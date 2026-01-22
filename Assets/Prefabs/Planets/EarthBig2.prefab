@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 3972781242831721628}
   - component: {fileID: 4417917199149181993}
   m_Layer: 0
-  m_Name: Earth
+  m_Name: EarthBig2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -30,8 +30,8 @@ Transform:
   m_GameObject: {fileID: 4370263807525258910}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 138}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalPosition: {x: 0, y: 0, z: 399}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3464968767460545293}
@@ -127,7 +127,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 70
+  m_Radius: 50
   m_Center: {x: 0.30517292, y: 0.30517292, z: 0.30517292}
 --- !u!114 &4417917199149181993
 MonoBehaviour:
@@ -141,8 +141,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca452d9a154d8624f96b2e8f858e72e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  planetRadius: 45
-  orbitRadius: 140
+  planetRadius: 220
+  orbitRadius: 475
   orientationAlignSharpness: 5
   alignRampDuration: 2
   alignRamp:
@@ -174,11 +174,11 @@ MonoBehaviour:
   baseLaunchSpeed: 80
   launchAngleOffsetDeg: 0
   enableBoosting: 1
-  chargeRate: 60
-  shrinkRate: 10
+  chargeRate: 120
+  shrinkRate: 5
   maxChargeTime: 60
   minCaptureTangentialSpeed: 35
-  maxCaptureTangentialSpeed: 500
+  maxCaptureTangentialSpeed: 1000
   captureMomentumPreserve: 1
   localShipBottomAxis: {x: 0, y: -1, z: 0}
   localShipForwardAxis: {x: 0, y: 0, z: 1}

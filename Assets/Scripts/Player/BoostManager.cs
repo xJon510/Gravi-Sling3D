@@ -30,6 +30,8 @@ public class BoostManager : MonoBehaviour
     [Tooltip("Energy drained per second at Boost01 = 1 (FreeFlight).")]
     public float drainPerSecond = 18f;
 
+    public bool dontDrain = false;
+
     [Tooltip("Energy regenerated per second (ONLY during OrbitCharging).")]
     public float regenPerSecond = 35f;
 
@@ -107,7 +109,7 @@ public class BoostManager : MonoBehaviour
         _boost01 = Mathf.Clamp01(_boost01 + delta * dt);
 
         // Drain energy ONLY while boostingWanted (optionally scale by boost01)
-        if (boostingWanted && drainPerSecond > 0f)
+        if (boostingWanted && !dontDrain && drainPerSecond > 0f)
         {
             _energy -= drainPerSecond * _boost01 * dt;
             if (_energy <= 0f)

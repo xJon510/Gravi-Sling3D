@@ -61,7 +61,7 @@ Material:
     - _DitherStart: 950
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _FarBrightness: 0
+    - _FarBrightness: 0.8
     - _FarCurvePower: 1.5
     - _FarFadeEnd: 550
     - _FarFadeStart: 100
