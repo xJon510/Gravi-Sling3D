@@ -422,6 +422,27 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
 
         if (smashVfxPool != null)
         {
+            Color asteroidColor = Color.white;
+
+            int typeId = (fieldData.typeIds != null && index < fieldData.typeIds.Length)
+                ? fieldData.typeIds[index]
+                : 0;
+
+            if (instancedRenderer != null &&
+                instancedRenderer.typeRenders != null &&
+                typeId >= 0 && typeId < instancedRenderer.typeRenders.Length &&
+                instancedRenderer.typeRenders[typeId] != null &&
+                instancedRenderer.typeRenders[typeId].material != null)
+            {
+                var mat = instancedRenderer.typeRenders[typeId].material;
+
+                // Your shader graph property name appears to be "_BaseColor"
+                if (mat.HasProperty("_BaseColor"))
+                    asteroidColor = mat.GetColor("_BaseColor");
+            }
+
+            asteroidColor = BrightenMultiply(asteroidColor, 2.5f);
+
             // Example tuning knobs
             float t = Mathf.InverseLerp(smashSpeedThreshold, smashSpeedThreshold * 2f, playerRb.linearVelocity.magnitude);
             float dirSpeed = vfxSpeed;                                  // from your velocity-based scalar
@@ -432,11 +453,18 @@ public class AsteroidFieldCollisionDetector : MonoBehaviour
             Vector3 asteroidPos = fieldData.positions[index];
             Vector3 hitPos = playerBox.bounds.ClosestPoint(asteroidPos);
 
-            smashVfxPool.SpawnImpact(hitPos, smashDir, dirSpeed, radialSpeed, randomSpeed, count);
+            smashVfxPool.SpawnImpact(hitPos, smashDir, dirSpeed, radialSpeed, randomSpeed, count, asteroidColor);
         }
 
         // Hide from instanced renderer (visual deletion)
         if (instancedRenderer != null)
             instancedRenderer.SetInstanceHidden(fieldData, index, true);
+    }
+    public static Color BrightenMultiply(Color c, float mult)
+    {
+        c.r *= mult;
+        c.g *= mult;
+        c.b *= mult;
+        return c;
     }
 }

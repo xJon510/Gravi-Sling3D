@@ -141,6 +141,26 @@ public class AsteroidVFXPoolManager : MonoBehaviour
         _available.Enqueue(vfx);
     }
 
+    // NEW: same as SpawnImpact but with a color
+    public void SpawnImpact(
+        Vector3 position,
+        Vector3 smashDirWorld,
+        float dirSpeed,
+        float radialSpeed,
+        float randomSpeed,
+        int count,
+        Color tint)
+    {
+        var vfx = GetFromPool();
+        if (!vfx) return;
+
+        vfx.transform.SetPositionAndRotation(position, Quaternion.identity);
+        vfx.gameObject.SetActive(true);
+
+        vfx.SetTint(tint); // NEW
+        vfx.PlayImpactBurst(smashDirWorld, dirSpeed, radialSpeed, randomSpeed, count);
+    }
+
     /// <summary>
     /// Component that lives on pooled instances.
     /// </summary>
@@ -219,6 +239,27 @@ public class AsteroidVFXPoolManager : MonoBehaviour
             // In case the callback comes from a child system, only return once.
             if (_pool != null && gameObject.activeInHierarchy)
                 _pool.ReturnToPool(this);
+        }
+
+        public void SetTint(Color c)
+        {
+            if (_systems == null) _systems = GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+
+            for (int i = 0; i < _systems.Length; i++)
+            {
+                if (!_systems[i]) continue;
+
+                var main = _systems[i].main;
+
+                // Preserve alpha from the existing startColor (optional but nice)
+                var existing = main.startColor;
+                Color baseCol = existing.mode == ParticleSystemGradientMode.Color
+                    ? existing.color
+                    : Color.white;
+
+                c.a = baseCol.a;
+                main.startColor = new ParticleSystem.MinMaxGradient(c);
+            }
         }
     }
 }

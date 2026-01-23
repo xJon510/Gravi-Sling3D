@@ -336,7 +336,7 @@ MonoBehaviour:
     maxCellPicks: 1500
   planetCellSize: 1000
   planetAvoidRadius: 220
-  planetSpawnChance: 0.8
+  planetSpawnChance: 0.4
   generateOnStart: 1
   logChunkCreates: 1
 --- !u!4 &103438303
@@ -709,7 +709,7 @@ MonoBehaviour:
   pickAttempts: 6
   planetCellSize: 1000
   planetAvoidRadius: 220
-  planetSpawnChance: 0.8
+  planetSpawnChance: 0.4
   beaconDepthFrac: 0.8
   beaconMaxDistance: 800
   armTriggerDistance: 900
@@ -777,21 +777,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1616803246}
   shipRb: {fileID: 1616803247}
-  count: 200
+  count: 600
   seed: 12345
   regenerateOnStart: 1
-  outerHalfExtents: {x: 300, y: 300, z: 300}
-  innerHalfExtents: {x: 10, y: 10, z: 10}
+  outerHalfExtents: {x: 600, y: 600, z: 600}
+  innerHalfExtents: {x: 1, y: 1, z: 1}
   surfaceEpsilon: 0.5
   minSpeedForVelocityAxis: 0.25
   axisSmoothing: 8
-  uniformScaleRange: {x: 1, y: 1.2}
+  uniformScaleRange: {x: 1, y: 1.5}
   randomRotation: 1
   angularSpeedRangeDeg: {x: 0, y: 35}
   enablePositionDrift: 1
-  driftSpeedRange: {x: 0, y: 5}
+  driftSpeedRange: {x: 2, y: 8}
   driftDirectionalBias: 0
-  hideFramesOnWrap: 2
+  hideFramesOnWrap: 1
 --- !u!4 &310636913
 Transform:
   m_ObjectHideFlags: 0
@@ -1242,7 +1242,7 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 383793092}
   serializedVersion: 8
-  lengthInSec: 2
+  lengthInSec: 1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 0
@@ -1317,7 +1317,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 2
+      scalar: 1
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -1487,9 +1487,9 @@ ParticleSystem:
         m_NumAlphaKeys: 2
     startSize:
       serializedVersion: 2
-      minMaxState: 0
-      scalar: 0.1
-      minScalar: 0
+      minMaxState: 3
+      scalar: 0.2
+      minScalar: 0.1
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -1540,7 +1540,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -1593,7 +1593,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeZ:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -6070,7 +6070,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   driveTrails: 1
   trailLifetimeAtZero: -0.1
-  trailLifetimeAtMax: 0.4
+  trailLifetimeAtMax: 0.6
   driveEmission: 1
   emissionAtZero: 0
   emissionAtMax: 500
@@ -6110,8 +6110,35 @@ MonoBehaviour:
   driveVelZ: 1
   invertSpeedForVel: 1
   velZAtZero: 0
-  velZAtMax: -60
+  velZAtMax: -50
   responseVelZ:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  driveScaling: 1
+  minScaling: 1
+  maxScaling: 3
+  responseScaling:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -22278,7 +22305,7 @@ MonoBehaviour:
   globalSeed: 12345
   planetCellSize: 1000
   planetAvoidRadius: 220
-  planetSpawnChance: 0.8
+  planetSpawnChance: 0.4
   renderRadius: 2500
   refreshInterval: 0.35
   worldSpace: 1
@@ -27176,7 +27203,7 @@ MonoBehaviour:
   disableIfInvalid: 1
   distanceFrom: {fileID: 1616803246}
   normalizeByOuterBox: 1
-  maxDistance: 600
+  maxDistance: 400
   scaleBand:
     serializedVersion: 2
     m_Curve:
@@ -27190,8 +27217,17 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
+      time: 0.05
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
       time: 0.3
-      value: 1
+      value: 0.6
       inSlope: 0.0236502
       outSlope: 0
       tangentMode: 65
@@ -27199,8 +27235,8 @@ MonoBehaviour:
       inWeight: 0.31583893
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.7
-      value: 1
+      time: 0.6
+      value: 0.6
       inSlope: -0
       outSlope: -0.010439671
       tangentMode: 5
@@ -27208,13 +27244,22 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.55740094
     - serializedVersion: 3
-      time: 1
+      time: 0.9
       value: 0
       inSlope: -0.022815213
       outSlope: 0
       tangentMode: 1
       weightedMode: 0
       inWeight: 0.40924746
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 1
+      weightedMode: 0
+      inWeight: 0
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2

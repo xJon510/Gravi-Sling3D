@@ -63,8 +63,8 @@ Material:
     - _DstBlendAlpha: 0
     - _FarBrightness: 0.8
     - _FarCurvePower: 1.5
-    - _FarFadeEnd: 550
-    - _FarFadeStart: 100
+    - _FarFadeEnd: 1000
+    - _FarFadeStart: 200
     - _Metallic: 0.9
     - _NearBlendDist: 1
     - _NearBrightness: 1.15

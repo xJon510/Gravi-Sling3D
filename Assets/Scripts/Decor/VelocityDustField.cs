@@ -35,6 +35,12 @@ public class VelocityDustField : MonoBehaviour
 
     public AnimationCurve responseVelZ = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    [Header("Scaling")]
+    public bool driveScaling = false;
+    public float minScaling = 1f;
+    public float maxScaling = 5f;
+    public AnimationCurve responseScaling = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
     void Reset()
     {
         ps = GetComponent<ParticleSystem>();
@@ -54,6 +60,7 @@ public class VelocityDustField : MonoBehaviour
         float speed01 = Mathf.Clamp01(speed / Mathf.Max(0.0001f, maxEffectSpeed));
         float t = Mathf.Clamp01(response.Evaluate(speed01));
         float e = Mathf.Clamp01(responseEmiss.Evaluate(speed01));
+        float s = Mathf.Clamp01(responseScaling.Evaluate(speed01));
 
         // --- Velocity mapping based on speed (optionally inverted)
         float velInput01 = invertSpeedForVel ? (1f - speed01) : speed01;
@@ -121,6 +128,25 @@ public class VelocityDustField : MonoBehaviour
             vol.x = new ParticleSystem.MinMaxCurve(0f);
             vol.y = new ParticleSystem.MinMaxCurve(0f);
             vol.z = new ParticleSystem.MinMaxCurve(-vz);
+        }
+
+        // 6) Optional: size scaling (MULTIPLIER on top of start size randomness)
+        if (driveScaling)
+        {
+            var sol = ps.sizeOverLifetime;
+            sol.enabled = true;
+
+            // We want to multiply the start size, not override it
+            sol.size = new ParticleSystem.MinMaxCurve(1f);
+
+            // Scale multiplier driven by speed
+            float scaleMul = Mathf.Lerp(minScaling, maxScaling, s);
+
+            // Use separate axes so this acts as a uniform multiplier
+            sol.separateAxes = true;
+            sol.x = new ParticleSystem.MinMaxCurve(scaleMul);
+            sol.y = new ParticleSystem.MinMaxCurve(scaleMul);
+            sol.z = new ParticleSystem.MinMaxCurve(scaleMul);
         }
     }
 }
