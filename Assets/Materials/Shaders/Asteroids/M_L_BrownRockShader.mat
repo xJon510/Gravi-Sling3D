@@ -61,18 +61,18 @@ Material:
     - _DitherStart: 950
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _FarBrightness: 0.9
+    - _FarBrightness: 1
     - _FarCurvePower: 1.5
-    - _FarFadeEnd: 1000
+    - _FarFadeEnd: 1150
     - _FarFadeStart: 550
-    - _Metallic: 0.9
+    - _Metallic: 0.6
     - _NearBlendDist: 50
-    - _NearBrightness: 1.15
+    - _NearBrightness: 1.2
     - _NearFreezeDist: 50
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 0
+    - _Smoothness: 0.2
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0

@@ -120,14 +120,24 @@ public class VelocityDustField : MonoBehaviour
 
         if (driveVelZ)
         {
+            var main = ps.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+
             var vol = ps.velocityOverLifetime;
             vol.enabled = true;
             vol.space = ParticleSystemSimulationSpace.Local;
 
-            // Feed into local -Z
+            // Up to maxEffectSpeed we follow your curve-driven vzBase.
+            // Beyond it, we multiply it up linearly (no clamp).
+            float unclamped01 = speed / Mathf.Max(0.0001f, maxEffectSpeed);
+            float boostFactor = Mathf.Max(1f, unclamped01);   // 1 at/below cap, >1 above cap
+
+            float vzUncapped = vz * boostFactor;
+
+            // Feed into local -Z (your system is rotated so +Z faces velocity)
             vol.x = new ParticleSystem.MinMaxCurve(0f);
             vol.y = new ParticleSystem.MinMaxCurve(0f);
-            vol.z = new ParticleSystem.MinMaxCurve(-vz);
+            vol.z = new ParticleSystem.MinMaxCurve(-vzUncapped);
         }
 
         // 6) Optional: size scaling (MULTIPLIER on top of start size randomness)

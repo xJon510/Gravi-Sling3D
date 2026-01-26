@@ -144,7 +144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   planetRadius: 45
   orbitRadius: 140
-  orientationAlignSharpness: 10
+  orientationAlignSharpness: 15
   alignRampDuration: 2
   alignRamp:
     serializedVersion: 2

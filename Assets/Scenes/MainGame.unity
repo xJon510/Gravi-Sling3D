@@ -777,19 +777,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1616803246}
   shipRb: {fileID: 1616803247}
-  count: 600
+  count: 1000
   seed: 123456
   regenerateOnStart: 1
-  outerHalfExtents: {x: 600, y: 600, z: 600}
+  outerHalfExtents: {x: 500, y: 500, z: 500}
   innerHalfExtents: {x: 1, y: 1, z: 1}
   surfaceEpsilon: 0.5
-  minSpeedForVelocityAxis: 50
-  axisSmoothing: 8
-  uniformScaleRange: {x: 1, y: 1.5}
+  minSpeedForVelocityAxis: 0.5
+  axisSmoothing: 16
+  uniformScaleRange: {x: 1, y: 2}
   randomRotation: 1
   angularSpeedRangeDeg: {x: 0, y: 35}
   enablePositionDrift: 1
-  driftSpeedRange: {x: 2, y: 8}
+  driftSpeedRange: {x: 4, y: 10}
   driftDirectionalBias: 0
   hideFramesOnWrap: 1
 --- !u!4 &310636913
@@ -1034,14 +1034,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 1616803246}
-  targetRb: {fileID: 0}
+  targetRb: {fileID: 1616803247}
   keepInitialOffset: 1
   manualOffset: {x: 0, y: 4, z: -20}
   positionSmooth: 5000
   mouseSensitivity: 3.5
   rollSpeed: 0
   enableLookAhead: 1
-  lookAheadMaxDistance: 4
+  lookAheadMaxDistance: 6
   lookAheadSharpness: 10
   lookAheadMinSpeed: 0.5
   lookAheadFullAtSpeed: 100
@@ -1132,7 +1132,7 @@ GameObject:
   - component: {fileID: 383793093}
   - component: {fileID: 383793095}
   - component: {fileID: 383793094}
-  - component: {fileID: 383793096}
+  - component: {fileID: 383793098}
   - component: {fileID: 383793097}
   m_Layer: 0
   m_Name: SpeedLines
@@ -1150,11 +1150,11 @@ Transform:
   m_GameObject: {fileID: 383793092}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 50}
+  m_LocalPosition: {x: 0, y: 0, z: 48.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1616803246}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!199 &383793094
 ParticleSystemRenderer:
@@ -1307,7 +1307,7 @@ ParticleSystem:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
-  moveWithTransform: 1
+  moveWithTransform: 0
   moveWithCustomTransform: {fileID: 0}
   scalingMode: 1
   randomSeed: 0
@@ -2860,8 +2860,8 @@ ParticleSystem:
     z:
       serializedVersion: 2
       minMaxState: 3
-      scalar: -59.35
-      minScalar: -23.32
+      scalar: -400
+      minScalar: -50
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -6015,20 +6015,6 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!114 &383793096
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 383793092}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef39686b58a5f784e9f821600a57fc63, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 1616803244}
-  offset: {x: 0, y: 0, z: -1.35}
 --- !u!114 &383793097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6043,7 +6029,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shipRb: {fileID: 1616803247}
   ps: {fileID: 383793095}
-  maxEffectSpeed: 1000
+  maxEffectSpeed: 1100
   response:
     serializedVersion: 2
     m_Curve:
@@ -6070,10 +6056,10 @@ MonoBehaviour:
     m_RotationOrder: 4
   driveTrails: 1
   trailLifetimeAtZero: -0.1
-  trailLifetimeAtMax: 0.6
+  trailLifetimeAtMax: 0.1
   driveEmission: 1
   emissionAtZero: 0
-  emissionAtMax: 500
+  emissionAtMax: 200
   responseEmiss:
     serializedVersion: 2
     m_Curve:
@@ -6107,10 +6093,10 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  driveVelZ: 0
-  invertSpeedForVel: 1
+  driveVelZ: 1
+  invertSpeedForVel: 0
   velZAtZero: 0
-  velZAtMax: -50
+  velZAtMax: 250
   responseVelZ:
     serializedVersion: 2
     m_Curve:
@@ -6135,9 +6121,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  driveScaling: 1
+  driveScaling: 0
   minScaling: 1
-  maxScaling: 3
+  maxScaling: 2
   responseScaling:
     serializedVersion: 2
     m_Curve:
@@ -6162,6 +6148,24 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &383793098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 383793092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ede468ce9051c2846ac1a30eca866869, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 1616803246}
+  targetRb: {fileID: 1616803247}
+  offset: {x: 0, y: 0, z: 0}
+  lookAheadMaxDistance: 30
+  minSpeedForRotation: 0.5
+  rotationSharpness: 12
 --- !u!1 &409990332
 GameObject:
   m_ObjectHideFlags: 0
@@ -21684,10 +21688,10 @@ MonoBehaviour:
   startFull: 1
   startEnergy: 100
   drainPerSecond: 18
-  dontDrain: 1
+  dontDrain: 0
   regenPerSecond: 10
-  boostRampUp: 1.2
-  boostRampDown: 2
+  boostRampUp: 2
+  boostRampDown: 0.5
   fillBarRect: {fileID: 937614817}
   forceLeftPivot: 1
 --- !u!4 &1352119091
@@ -22094,8 +22098,8 @@ MonoBehaviour:
   damping: 2
   normalizeInput: 1
   boostMaxSpeedAdd: 900
-  boostRampUp: 1.2
-  boostRampDown: 2
+  boostRampUp: 2
+  boostRampDown: 0.5
   boostAccelAdd: 50
   limitBaseThrustToMaxSpeed: 1
   enableRotation: 1
@@ -22134,7 +22138,6 @@ Transform:
   - {fileID: 1000403085}
   - {fileID: 1428535938}
   - {fileID: 410087041}
-  - {fileID: 383793093}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &1616803247
@@ -27203,7 +27206,7 @@ MonoBehaviour:
   disableIfInvalid: 1
   distanceFrom: {fileID: 1616803246}
   normalizeByOuterBox: 1
-  maxDistance: 400
+  maxDistance: 600
   scaleBand:
     serializedVersion: 2
     m_Curve:
@@ -27235,7 +27238,7 @@ MonoBehaviour:
       inWeight: 0.31583893
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.6
+      time: 0.5
       value: 0.6
       inSlope: -0
       outSlope: -0.010439671
@@ -32352,6 +32355,7 @@ SceneRoots:
   - {fileID: 409990333}
   - {fileID: 480414392}
   - {fileID: 1616803246}
+  - {fileID: 383793093}
   - {fileID: 980576575}
   - {fileID: 998671943}
   - {fileID: 4944189793185897459}
