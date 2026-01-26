@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 670e70069ec990546851698fcb9c6e16, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 9ceef34793cc4c6418109ab72fb7b157, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -273,7 +273,7 @@ MonoBehaviour:
   collisionDetector: {fileID: 821560725}
   chunkSize: 1000
   gridWidth: 3
-  globalSeed: 12345
+  globalSeed: 123456
   settings:
     types:
     - name: L_BlueRock
@@ -703,7 +703,7 @@ MonoBehaviour:
   cam: {fileID: 330585545}
   planetRenderer: {fileID: 1632884798}
   questBeaconPrefab: {fileID: 522058233459429503, guid: a8f6f75c5bbe426468d06af262fa860a, type: 3}
-  globalSeed: 12345
+  globalSeed: 123456
   pickRadius: 6000
   minTargetDistance: 1500
   pickAttempts: 6
@@ -778,12 +778,12 @@ MonoBehaviour:
   player: {fileID: 1616803246}
   shipRb: {fileID: 1616803247}
   count: 600
-  seed: 12345
+  seed: 123456
   regenerateOnStart: 1
   outerHalfExtents: {x: 600, y: 600, z: 600}
   innerHalfExtents: {x: 1, y: 1, z: 1}
   surfaceEpsilon: 0.5
-  minSpeedForVelocityAxis: 0.25
+  minSpeedForVelocityAxis: 50
   axisSmoothing: 8
   uniformScaleRange: {x: 1, y: 1.5}
   randomRotation: 1
@@ -1135,7 +1135,7 @@ GameObject:
   - component: {fileID: 383793096}
   - component: {fileID: 383793097}
   m_Layer: 0
-  m_Name: DriftDebris
+  m_Name: SpeedLines
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1150,7 +1150,7 @@ Transform:
   m_GameObject: {fileID: 383793092}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 51.35}
+  m_LocalPosition: {x: 0, y: 0, z: 50}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1646,7 +1646,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationX:
       serializedVersion: 2
-      minMaxState: 3
+      minMaxState: 0
       scalar: 6.283185
       minScalar: 0
       maxCurve:
@@ -1699,7 +1699,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationY:
       serializedVersion: 2
-      minMaxState: 3
+      minMaxState: 0
       scalar: 6.283185
       minScalar: 0
       maxCurve:
@@ -1752,8 +1752,8 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotation:
       serializedVersion: 2
-      minMaxState: 3
-      scalar: 6.283185
+      minMaxState: 0
+      scalar: 0
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -6107,7 +6107,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  driveVelZ: 1
+  driveVelZ: 0
   invertSpeedForVel: 1
   velZAtZero: 0
   velZAtMax: -50
@@ -6838,7 +6838,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &980576575
 Transform:
   m_ObjectHideFlags: 0
@@ -6947,7 +6947,7 @@ ParticleSystem:
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 1
   looping: 1
-  prewarm: 1
+  prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
@@ -7185,8 +7185,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 3
-      minScalar: 1.5
+      scalar: 5
+      minScalar: 3
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -7343,8 +7343,8 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationX:
       serializedVersion: 2
-      minMaxState: 0
-      scalar: 0
+      minMaxState: 3
+      scalar: 6.283185
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -7396,8 +7396,8 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationY:
       serializedVersion: 2
-      minMaxState: 0
-      scalar: 0
+      minMaxState: 3
+      scalar: 6.283185
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -7449,8 +7449,8 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotation:
       serializedVersion: 2
-      minMaxState: 0
-      scalar: 0
+      minMaxState: 3
+      scalar: 6.283185
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -7566,7 +7566,7 @@ ParticleSystem:
     angle: 25
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
-    radiusThickness: 0.2
+    radiusThickness: 0.15
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
     m_Rotation: {x: 0, y: 0, z: 0}
@@ -7649,7 +7649,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 600
+      value: 1000
       mode: 0
       spread: 0
       speed:
@@ -22183,8 +22183,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 7.5, y: 1.8, z: 6.6}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 7.2, y: 1.6, z: 6.6}
+  m_Center: {x: 0, y: 0, z: 0.2}
 --- !u!114 &1616803249
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22302,7 +22302,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 1616803246}
   planetPrefab: {fileID: 4370263807525258910, guid: 714181eb6ea84da4ba829cc76a3725e7, type: 3}
-  globalSeed: 12345
+  globalSeed: 123456
   planetCellSize: 1000
   planetAvoidRadius: 220
   planetSpawnChance: 0.4

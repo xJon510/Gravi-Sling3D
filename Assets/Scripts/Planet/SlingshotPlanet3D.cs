@@ -24,6 +24,7 @@ public class SlingshotPlanet3D : MonoBehaviour
     public string requiredTag = "";
 
     [Header("Orbit / Launch")]
+    public GameObject Bubble;
     public float baseOrbitSpeedDegPerSec = 180f;
     public float baseLaunchSpeed = 12f;
 
@@ -123,6 +124,8 @@ public class SlingshotPlanet3D : MonoBehaviour
 
         if (BoostManager.Instance)
             BoostManager.Instance.SetMode(BoostManager.Mode.OrbitIdle);
+
+        Bubble.gameObject.SetActive(false);
 
         orbitStartTime = Time.time;
 
@@ -343,6 +346,8 @@ public class SlingshotPlanet3D : MonoBehaviour
 
         // Re-enable movement.
         if (cachedMoveScript) cachedMoveScript.enabled = true;
+
+        Bubble.gameObject.SetActive(true);
 
         if (PlayerThrustManager.Instance)
             PlayerThrustManager.Instance.ResetToIdle();
