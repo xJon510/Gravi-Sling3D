@@ -290,12 +290,12 @@ public class SimpleMove : MonoBehaviour
         if (showMagnitudeOnly)
         {
             velocityText.text =
-                $"Velocity: {vel.magnitude.ToString($"F{velocityDecimals}")}";
+                $"Speed: {vel.magnitude.ToString($"F{velocityDecimals}")}";
         }
         else
         {
             velocityText.text =
-                $"Velocity:\n" +
+                $"Speed:\n" +
                 $"X {vel.x.ToString($"F{velocityDecimals}")}\n" +
                 $"Y {vel.y.ToString($"F{velocityDecimals}")}\n" +
                 $"Z {vel.z.ToString($"F{velocityDecimals}")}\n" +
