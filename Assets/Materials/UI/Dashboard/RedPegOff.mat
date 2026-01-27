@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GreenPeg
+  m_Name: RedPegOff
   m_Shader: {fileID: -6465566751694194690, guid: e26a8b6f0dd545248af4bca738084e0e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -55,11 +55,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _EmissionStrength: 3
+    - _EmissionStrength: 0
     - _QueueControl: 0
     - _QueueOffset: 0
     m_Colors:
-    - _EmissionColor: {r: 0, g: 1.4980394, b: 0.39900926, a: 1}
-    - _Tint: {r: 0.68017834, g: 0.79607844, b: 0.64705884, a: 1}
+    - _EmissionColor: {r: 1.4980392, g: 0, b: 0, a: 1}
+    - _Tint: {r: 1, g: 0.15789473, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
